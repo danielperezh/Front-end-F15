@@ -55,11 +55,20 @@ export default {
       try {
         // Enviar archivos al backend para unirlos
         const response = await axios.post('http://localhost:8086/api/excel/upload-merge', formData, {
-          responseType: 'blob'
+          responseType: 'blob',
+          validateStatus: (status) => status < 500 // Permitir manejar errores de cliente (400)
         });
-        // Crear un enlace de descarga para el archivo combinado
-        const url = window.URL.createObjectURL(new Blob([response.data]));
-        this.downloadLink = url;
+
+        if (response.status === 400) {
+          // Leer el mensaje de error devuelto por el backend
+          const errorText = await response.data.text();
+          this.modalMessage = errorText;
+          this.showModal = true; // Mostrar modal con el mensaje de error
+        } else {
+          // Crear un enlace de descarga para el archivo combinado si no hubo error
+          const url = window.URL.createObjectURL(new Blob([response.data]));
+          this.downloadLink = url;
+        }
       } catch (error) {
         console.error('Error al subir los archivos:', error);
       }
@@ -70,6 +79,7 @@ export default {
   }
 };
 </script>
+
 
 <style scoped>
 .excel-uploader {
