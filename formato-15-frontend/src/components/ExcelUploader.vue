@@ -4,9 +4,10 @@
     <h2>Subir y Visualizar Archivo Excel</h2>
     <input type="file" @change="handleFileUpload" />
     <button @click="previewFile">Cargar Vista Previa</button>
+    <button @click="validateFile" v-if="fileData.length > 0">Validar Archivo</button>
     <button @click="saveFile" v-if="fileData.length > 0">Guardar Cambios</button>
     <a v-if="downloadLink" :href="downloadLink" download="Formato15.xlsx">Descargar Archivo Validado</a>
- 
+
     <!-- Tabla para visualizar y editar datos -->
     <div v-if="fileData.length > 0">
       <h3>Vista Previa del Archivo</h3>
@@ -27,32 +28,34 @@
         </table>
       </div>
     </div>
- 
+
     <!-- Modal de alerta -->
     <div v-if="showModal" class="modal">
       <div class="modal-content">
+        <h3>Error de Validación</h3>
         <p>{{ modalMessage }}</p>
         <button @click="closeModal">Cerrar</button>
       </div>
     </div>
   </div>
 </template>
- 
+
 <script>
 import axios from 'axios';
+
 export default {
   data() {
     return {
-      file: null, // Almacena el archivo seleccionado
-      fileData: [], // Datos del archivo cargado para visualizar y editar
-      downloadLink: null, // Enlace para descargar el archivo validado
-      showModal: false, // Controla la visibilidad del modal
-      modalMessage: '' // Mensaje dinámico del modal
+      file: null,
+      fileData: [],
+      downloadLink: null,
+      showModal: false,
+      modalMessage: ''
     };
   },
   methods: {
     handleFileUpload(event) {
-      this.file = event.target.files[0]; // Almacena el archivo subido
+      this.file = event.target.files[0];
     },
     async previewFile() {
       if (!this.file) {
@@ -63,25 +66,31 @@ export default {
       const formData = new FormData();
       formData.append('file', this.file);
       try {
-    const response = await axios.post('http://localhost:8086/api/excel/preview', formData);
-    this.fileData = response.data;
-    } catch (error) {
-      if (error.response && error.response.data) {
-        this.modalMessage = error.response.data.message || 'Error desconocido'; // Si el backend no proporciona un mensaje, muestra un mensaje genérico
-      } else {
-        this.modalMessage = 'Error al comunicarse con el servidor.';
+        const response = await axios.post('http://localhost:8086/api/excel/preview', formData);
+        this.fileData = response.data;
+      } catch (error) {
+        this.handleError(error, 'Error al cargar vista previa.');
       }
-      this.showModal = true;
-    }
+    },
+    async validateFile() {
+      const formData = new FormData();
+      formData.append('file', this.file);
+      try {
+        const response = await axios.post('http://localhost:8086/api/excel/validation', formData);
+        this.modalMessage = response.data || 'El archivo es válido y cumple con todas las verificaciones.';
+        this.showModal = true;
+      } catch (error) {
+        this.handleError(error, 'El archivo no cumple con las validaciones.');
+      }
     },
     async saveFile() {
       try {
-    const response = await axios.post('http://localhost:8086/api/excel/upload-merge', this.fileData, {
+        const response = await axios.post('http://localhost:8086/api/excel/upload-merge', this.fileData, {
           responseType: 'blob',
-          validateStatus: (status) => status < 500 // Permitir manejar errores de cliente (400)
+          validateStatus: (status) => status < 500
         });
         if (response.status === 200) {
-          this.modalMessage = "Archivo validado correctamente!";
+          this.modalMessage = 'Archivo guardado y validado correctamente!';
           this.showModal = true;
           const url = window.URL.createObjectURL(new Blob([response.data]));
           this.downloadLink = url;
@@ -91,10 +100,17 @@ export default {
           this.showModal = true;
         }
       } catch (error) {
-        console.error('Error al subir el archivo:', error);
-        this.modalMessage = 'Ocurrió un error al subir el archivo. Por favor, intente nuevamente.';
-        this.showModal = true;
+        this.handleError(error, 'Error al guardar el archivo.');
       }
+    },
+    handleError(error, defaultMessage) {
+      // Mostrar el mensaje de error del backend si existe, si no, usar mensaje por defecto
+      if (error.response && error.response.data) {
+        this.modalMessage = error.response.data || defaultMessage;
+      } else {
+        this.modalMessage = defaultMessage;
+      }
+      this.showModal = true;
     },
     closeModal() {
       this.showModal = false;
@@ -102,7 +118,8 @@ export default {
   }
 };
 </script>
- 
+
+
 <style scoped>
 /* Estilos generales */
 .excel-uploader {
@@ -113,7 +130,7 @@ export default {
   align-items: center;
   padding: 0 10px;
 }
- 
+
 .styled-header {
   font-size: 48px;
   color: white;
@@ -121,7 +138,7 @@ export default {
   font-weight: bold;
   margin-bottom: 20px;
 }
- 
+
 button, a {
   margin-top: 10px;
   padding: 10px 20px;
@@ -133,45 +150,45 @@ button, a {
   text-align: center;
   text-decoration: none;
 }
- 
+
 a {
   width: auto !important;
 }
- 
+
 button:disabled {
   background-color: gray;
   cursor: not-allowed;
 }
- 
+
 /* Estilos de la tabla */
 .table-responsive {
   overflow-x: auto;
   width: 100%;
 }
- 
+
 table {
   width: 100%;
   border-collapse: collapse;
   margin-top: 20px;
 }
- 
+
 th, td {
   border: 1px solid #ddd;
   padding: 8px;
   text-align: center;
 }
- 
+
 th {
   background-color: #f2f2f2;
   font-weight: bold;
 }
- 
+
 input {
   width: 100%;
   box-sizing: border-box;
   padding: 5px;
 }
- 
+
 /* Estilos del modal */
 .modal {
   display: flex;
@@ -184,7 +201,7 @@ input {
   height: 100%;
   background-color: rgba(0, 0, 0, 0.5);
 }
- 
+
 .modal-content {
   background-color: white;
   padding: 20px;
@@ -192,7 +209,7 @@ input {
   width: auto;
   text-align: center;
 }
- 
+
 .modal-content button {
   margin-top: 20px;
   padding: 10px 20px;
@@ -201,17 +218,17 @@ input {
   border: none;
   cursor: pointer;
 }
- 
+
 /* Media queries para ajustar elementos en pantallas pequeñas */
 @media (max-width: 768px) {
   .styled-header {
     font-size: 36px;
   }
- 
+
   button, a {
     width: 80%;
   }
- 
+
   th, td {
     padding: 5px;
   }
