@@ -1,10 +1,10 @@
 <template>
   <div class="excel-uploader">
     <h1 class="styled-header">Formato 15</h1>
-    <h2>Subir Archivos Excel</h2>
-    <input type="file" multiple @change="handleFileUpload" />
-    <button @click="uploadFiles">Unir Archivos</button>
-    <a v-if="downloadLink" :href="downloadLink" download="Formato15.xlsx">Descargar Excel Combinado</a>
+    <h2>Subir Archivo Excel</h2>
+    <input type="file" @change="handleFileUpload" />
+    <button @click="uploadFile">Validar Archivo</button>
+    <a v-if="downloadLink" :href="downloadLink" download="Formato15.xlsx">Descargar Archivo Validado</a>
 
     <!-- Modal de alerta -->
     <div v-if="showModal" class="modal">
@@ -22,55 +22,52 @@ import axios from 'axios';
 export default {
   data() {
     return {
-      files: [], // Almacena los archivos seleccionados
-      downloadLink: null, // Enlace para descargar el archivo combinado
+      file: null, // Almacena el archivo seleccionado
+      downloadLink: null, // Enlace para descargar el archivo validado
       showModal: false, // Controla la visibilidad del modal
       modalMessage: '' // Mensaje dinámico del modal
     };
   },
   methods: {
     handleFileUpload(event) {
-      this.files = Array.from(event.target.files); // Almacena los archivos subidos
+      this.file = event.target.files[0]; // Almacena el archivo subido
     },
-    async uploadFiles() {
-      // Validaciones para los archivos seleccionados
-      if (this.files.length === 0) {
+    async uploadFile() {
+      // Validación para asegurarse de que se haya seleccionado un archivo
+      if (!this.file) {
         this.modalMessage = 'No hay ningún archivo seleccionado. Por favor suba uno.';
         this.showModal = true; // Mostrar modal si no hay archivos subidos
         return;
       }
 
-      if (this.files.length === 1) {
-        this.modalMessage = 'No se puede unir un solo archivo. Por favor suba al menos dos archivos.';
-        this.showModal = true; // Mostrar modal si solo hay un archivo
-        return;
-      }
-
-      // Crear formData y agregar los archivos
+      // Crear formData y agregar el archivo
       const formData = new FormData();
-      this.files.forEach((file) => {
-        formData.append('files', file);
-      });
+      formData.append('file', this.file);
 
       try {
-        // Enviar archivos al backend para unirlos
+        // Enviar archivo al backend para validar
         const response = await axios.post('http://localhost:8086/api/excel/upload-merge', formData, {
           responseType: 'blob',
           validateStatus: (status) => status < 500 // Permitir manejar errores de cliente (400)
         });
 
-        if (response.status === 400) {
+        if (response.status === 200) {
+          // Mostrar mensaje de éxito
+          this.modalMessage = "Archivo validado correctamente!"; // Aquí puedes modificar según lo que devuelva el backend
+          this.showModal = true; // Mostrar modal con el mensaje de éxito
+          // Crear un enlace de descarga para el archivo validado
+          const url = window.URL.createObjectURL(new Blob([response.data]));
+          this.downloadLink = url;
+        } else if (response.status === 400) {
           // Leer el mensaje de error devuelto por el backend
           const errorText = await response.data.text();
           this.modalMessage = errorText;
           this.showModal = true; // Mostrar modal con el mensaje de error
-        } else {
-          // Crear un enlace de descarga para el archivo combinado si no hubo error
-          const url = window.URL.createObjectURL(new Blob([response.data]));
-          this.downloadLink = url;
         }
       } catch (error) {
-        console.error('Error al subir los archivos:', error);
+        console.error('Error al subir el archivo:', error);
+        this.modalMessage = 'Ocurrió un error al subir el archivo. Por favor, intente nuevamente.';
+        this.showModal = true; // Mostrar modal con el mensaje de error
       }
     },
     closeModal() {
@@ -79,7 +76,6 @@ export default {
   }
 };
 </script>
-
 
 <style scoped>
 .excel-uploader {
