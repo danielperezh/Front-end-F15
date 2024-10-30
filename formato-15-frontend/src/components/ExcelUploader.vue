@@ -32,7 +32,7 @@
     <!-- Modal de alerta -->
     <div v-if="showModal" class="modal">
       <div class="modal-content">
-        <h3>Error de Validación</h3>
+        <h3>Mensaje!</h3>
         <p>{{ modalMessage }}</p>
         <button @click="closeModal">Cerrar</button>
       </div>
@@ -73,10 +73,8 @@ export default {
       }
     },
     async validateFile() {
-      const formData = new FormData();
-      formData.append('file', this.file);
       try {
-        const response = await axios.post('http://localhost:8086/api/excel/validation', formData);
+        const response = await axios.post('http://localhost:8086/api/excel/validateEditedData', this.fileData);
         this.modalMessage = response.data || 'El archivo es válido y cumple con todas las verificaciones.';
         this.showModal = true;
       } catch (error) {
@@ -85,13 +83,15 @@ export default {
     },
     async saveFile() {
       try {
-        const response = await axios.post('http://localhost:8086/api/excel/upload-merge', this.fileData, {
+        const response = await axios.post('http://localhost:8086/api/excel/saveFile', this.fileData, {
           responseType: 'blob',
           validateStatus: (status) => status < 500
         });
         if (response.status === 200) {
           this.modalMessage = 'Archivo guardado y validado correctamente!';
           this.showModal = true;
+
+          // Crear un enlace de descarga para el archivo
           const url = window.URL.createObjectURL(new Blob([response.data]));
           this.downloadLink = url;
         } else if (response.status === 400) {
@@ -104,7 +104,6 @@ export default {
       }
     },
     handleError(error, defaultMessage) {
-      // Mostrar el mensaje de error del backend si existe, si no, usar mensaje por defecto
       if (error.response && error.response.data) {
         this.modalMessage = error.response.data || defaultMessage;
       } else {
