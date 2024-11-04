@@ -1,7 +1,7 @@
 <template>
   <div class="excel-uploader">
     <h1 class="styled-header">Formato 15</h1>
-    <h2>Subir y Visualizar Archivo Excel</h2>
+    <h2>Validar Formato 15</h2>
     <input type="file" @change="handleFileUpload" />
     <button @click="previewFile">Cargar Vista Previa</button>
     <button @click="validateFile" v-if="fileData.length > 0">Validar Archivo</button>
@@ -73,8 +73,10 @@ export default {
       }
     },
     async validateFile() {
+      const formData = new FormData();
+      formData.append('file', this.file);
       try {
-        const response = await axios.post('http://localhost:8086/api/excel/validateEditedData', this.fileData);
+        const response = await axios.post('http://localhost:8086/api/excel/validateEditedData', formData);
         this.modalMessage = response.data || 'El archivo es válido y cumple con todas las verificaciones.';
         this.showModal = true;
       } catch (error) {
@@ -88,7 +90,7 @@ export default {
           validateStatus: (status) => status < 500
         });
         if (response.status === 200) {
-          this.modalMessage = 'Archivo guardado y validado correctamente!';
+          this.modalMessage = 'Archivo guardado correctamente!';
           this.showModal = true;
 
           // Crear un enlace de descarga para el archivo
@@ -123,7 +125,7 @@ export default {
 /* Estilos generales */
 .excel-uploader {
   text-align: center;
-  margin-top: 50px;
+  margin-top: 10px;
   display: flex;
   flex-direction: column;
   align-items: center;
