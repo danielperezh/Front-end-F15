@@ -1,11 +1,12 @@
 <template>
   <div class="excel-uploader">
     <h1 class="styled-header">Formato 15</h1>
-    <h2>Validar Formato 15</h2>
-    <input type="file" @change="handleFileUpload" />
+    <!-- <h2>Validar Formato 15</h2> -->
+    <input class="cargue" type="file" @change="handleFileUpload" />
     <button @click="previewFile">Cargar Vista Previa</button>
     <button @click="validateFile" v-if="fileData.length > 0">Validar Archivo</button>
-    <button @click="saveFile" v-if="fileData.length > 0">Guardar Cambios</button>
+    <!-- <button @click="saveFile"  v-if="isValid">Guardar Cambios</button>  -->
+    <button @click="saveFile"  v-if="fileData.length > 0">Guardar Cambios</button> 
     <a v-if="downloadLink" :href="downloadLink" download="Formato15.xlsx">Descargar Archivo Validado</a>
 
     <!-- Tabla para visualizar y editar datos -->
@@ -50,6 +51,7 @@ export default {
       fileData: [],
       downloadLink: null,
       showModal: false,
+      isValid: false,
       modalMessage: ''
     };
   },
@@ -72,7 +74,7 @@ export default {
         this.handleError(error, 'Error al cargar vista previa.');
       }
     },
-    async validateFile() {
+    async validateFile() { //esta es la validacion que se realiza del archivo
       const formData = new FormData();
       formData.append('file', this.file);
       try {
@@ -81,9 +83,10 @@ export default {
         this.showModal = true;
       } catch (error) {
         this.handleError(error, 'El archivo no cumple con las validaciones.');
+        this.isValid = true
       }
     },
-    async saveFile() {
+    async saveFile() { //guarda los cambios realizados en el archivo
       try {
         const response = await axios.post('http://localhost:8086/api/excel/saveFile', this.fileData, {
           responseType: 'blob',
@@ -132,6 +135,10 @@ export default {
   padding: 0 10px;
 }
 
+.cargue {
+  width: auto !important;
+}
+
 .styled-header {
   font-size: 48px;
   color: white;
@@ -167,10 +174,12 @@ button:disabled {
   width: 100%;
 }
 
-table {
+table, tr {
   width: 100%;
   border-collapse: collapse;
   margin-top: 20px;
+  /* background-color: rgb(253, 246, 237); */
+  background-color: #e4e0d0;
 }
 
 th, td {
@@ -180,7 +189,8 @@ th, td {
 }
 
 th {
-  background-color: #f2f2f2;
+  /* background-color: #f2f2f2; */
+  background-color: #e4dfcb;
   font-weight: bold;
 }
 
