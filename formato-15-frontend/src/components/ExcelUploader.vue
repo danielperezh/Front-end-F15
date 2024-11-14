@@ -97,8 +97,8 @@ export default {
           this.showModal = true;
 
           // Crear un enlace de descarga para el archivo
-          const url = window.URL.createObjectURL(new Blob([response.data]));
-          this.downloadLink = url;
+          // const url = window.URL.createObjectURL(new Blob([response.data]));
+          // this.downloadLink = url;
         } else if (response.status === 400) {
           const errorText = await response.data.text();
           this.modalMessage = errorText;
