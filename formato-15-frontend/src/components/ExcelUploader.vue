@@ -4,9 +4,11 @@
     <!-- <h2>Validar Formato 15</h2> -->
     <input class="cargue" type="file" @change="handleFileUpload" />
     <button @click="previewFile">Cargar Vista Previa</button>
-    <button @click="validateFile" v-if="fileData.length > 0">Validar Archivo</button>
-    <!-- <button @click="saveFile"  v-if="isValid">Guardar Cambios</button>  -->
-    <button @click="saveFile"  v-if="fileData.length > 0">Guardar Cambios</button> 
+    <button @click="validateFile" v-if="fileData.length > 0">Validar y Guardar</button>
+    <button v-if="showSendButton" @click="sendToDatabase">Enviar a SIEC</button>
+    <!-- <button @click="validateFile" v-if="fileData.length > 0">Validar Archivo</button>
+    <button @click="saveFile"  v-if="isValid">Guardar Cambios</button> 
+    <button @click="saveFile"  v-if="fileData.length > 0">Guardar Cambios</button>  -->
     <a v-if="downloadLink" :href="downloadLink" download="Formato15.xlsx">Descargar Archivo Validado</a>
 
     <!-- Tabla para visualizar y editar datos -->
@@ -52,7 +54,8 @@ export default {
       downloadLink: null,
       showModal: false,
       isValid: false,
-      modalMessage: ''
+      modalMessage: '',
+      showSendButton: false
     };
   },
   methods: {
@@ -74,40 +77,64 @@ export default {
         this.handleError(error, 'Error al cargar vista previa.');
       }
     },
-    async validateFile() { //esta es la validacion que se realiza del archivo
-      const formData = new FormData();
-      formData.append('file', this.file);
+    async validateFile() {
       try {
-        const response = await axios.post('http://localhost:8086/api/excel/validateEditedData', formData);
+        const response = await axios.post('http://localhost:8086/api/excel/validateAndSaveFile', this.fileData);
         this.modalMessage = response.data || 'El archivo es válido y cumple con todas las verificaciones.';
         this.showModal = true;
+
+        // Muestra el botón "Enviar a SIEC" si la validación fue exitosa
+        this.showSendButton = true;
       } catch (error) {
         this.handleError(error, 'El archivo no cumple con las validaciones.');
-        this.isValid = true
+        this.showSendButton = false; // Oculta el botón si hay errores de validación
       }
     },
-    async saveFile() { //guarda los cambios realizados en el archivo
+    // Nuevo método para enviar los datos validados a la base de datos
+    async sendToDatabase() {
       try {
-        const response = await axios.post('http://localhost:8086/api/excel/saveFile', this.fileData, {
-          responseType: 'blob',
-          validateStatus: (status) => status < 500
-        });
-        if (response.status === 200) {
-          this.modalMessage = 'Archivo guardado correctamente!';
-          this.showModal = true;
-
-          // Crear un enlace de descarga para el archivo
-          // const url = window.URL.createObjectURL(new Blob([response.data]));
-          // this.downloadLink = url;
-        } else if (response.status === 400) {
-          const errorText = await response.data.text();
-          this.modalMessage = errorText;
-          this.showModal = true;
-        }
+        const response = await axios.post('http://localhost:8086/api/excel/sendToDatabase');
+        this.modalMessage = response.data;
+        this.showModal = true;
+        this.showSendButton = false; // Oculta el botón tras el envío exitoso
       } catch (error) {
-        this.handleError(error, 'Error al guardar el archivo.');
+        this.handleError(error, 'Error al enviar los datos a la base de datos.');
       }
     },
+    // async validateFile() { //esta es la validacion que se realiza del archivo
+    //   const formData = new FormData();
+    //   formData.append('file', this.file);
+    //   try {
+    //     const response = await axios.post('http://localhost:8086/api/excel/validateEditedData', formData);
+    //     this.modalMessage = response.data || 'El archivo es válido y cumple con todas las verificaciones.';
+    //     this.showModal = true;
+    //   } catch (error) {
+    //     this.handleError(error, 'El archivo no cumple con las validaciones.');
+    //     this.isValid = true
+    //   }
+    // },
+    // async saveFile() { //guarda los cambios realizados en el archivo
+    //   try {
+    //     const response = await axios.post('http://localhost:8086/api/excel/saveFile', this.fileData, {
+    //       responseType: 'blob',
+    //       validateStatus: (status) => status < 500
+    //     });
+    //     if (response.status === 200) {
+    //       this.modalMessage = 'Archivo guardado correctamente!';
+    //       this.showModal = true;
+
+    //       // Crear un enlace de descarga para el archivo
+    //       const url = window.URL.createObjectURL(new Blob([response.data]));
+    //       this.downloadLink = url;
+    //     } else if (response.status === 400) {
+    //       const errorText = await response.data.text();
+    //       this.modalMessage = errorText;
+    //       this.showModal = true;
+    //     }
+    //   } catch (error) {
+    //     this.handleError(error, 'Error al guardar el archivo.');
+    //   }
+    // },
     handleError(error, defaultMessage) {
       if (error.response && error.response.data) {
         this.modalMessage = error.response.data || defaultMessage;
