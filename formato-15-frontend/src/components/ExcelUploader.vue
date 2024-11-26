@@ -21,20 +21,10 @@
               <th v-for="(value, key) in fileData[0]" :key="key">{{ key }}</th>
             </tr>
           </thead>
-          <!-- <tbody>
+          <tbody>
             <tr v-for="(row, rowIndex) in fileData" :key="rowIndex">
               <td v-for="(value, key) in row" :key="key">
                 <input v-model="fileData[rowIndex][key]" />
-              </td>
-            </tr>
-          </tbody> -->
-          <tbody>
-            <tr v-for="(row, rowIndex) in fileData" :key="rowIndex">
-              <td 
-                v-for="(value, key) in row.data" 
-                :key="key" 
-                :class="{ 'error-cell': row.errors[key] }">
-                <input v-model="fileData[rowIndex].data[key]" />
               </td>
             </tr>
           </tbody>
@@ -90,8 +80,11 @@ export default {
     async validateFile() {
       try {
         const response = await axios.post('http://localhost:8086/api/excel/validateAndSaveFile', this.fileData);
-        this.modalMessage = response.data || 'El archivo es válido y cumple con todas las verificaciones.';
+        this.modalMessage = 'El archivo es válido y cumple con todas las verificaciones.';
         this.showModal = true;
+        //Crear un enlace de descarga para el archivo
+        const url = window.URL.createObjectURL(new Blob([response.data]));
+        this.downloadLink = url;
 
         // Muestra el botón "Enviar a SIEC" si la validación fue exitosa
         this.showSendButton = true;
@@ -231,10 +224,6 @@ input {
   color: white;
   border: none;
   cursor: pointer;
-}
-
-.error-cell {
-  border: 2px solid red;
 }
 
 /* Media queries para ajustar elementos en pantallas pequeñas */
