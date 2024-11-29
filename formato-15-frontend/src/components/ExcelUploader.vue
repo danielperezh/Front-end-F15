@@ -1,15 +1,28 @@
 <template>
   <div class="excel-uploader">
     <h1 class="styled-header">Formato 15</h1>
-    <!-- <h2>Validar Formato 15</h2> -->
-    <input class="cargue" type="file" @change="handleFileUpload" />
+    
+    <!-- Campos para ingresar Año y Mes -->
+    <div>
+      <label for="ano">Año:</label>
+      <input type="number" id="ano" v-model="ano" placeholder="Ingrese el año" />
+      <label for="mes">Mes:</label>
+      <input type="number" id="mes" v-model="mes" placeholder="Ingrese el mes" />
+      <button @click="fetchData">Buscar Datos</button>
+    </div>
+
+    <!-- Botones de acciones -->
+    <button @click="validateFile" v-if="fileData.length > 0">Validar y Guardar</button>
+    <button v-if="isValid && fileData.length > 0" @click="downloadCSV">Descargar Datos en CSV</button>
+    <button @click="loadFile">Cargar desde archivo</button>
+    <!-- <button v-if="isValid && showSendButton" @click="sendToDatabase">Enviar a SIEC</button> -->
+
+
+    <!-- <input class="cargue" type="file" @change="handleFileUpload" />
     <button @click="previewFile">Cargar Vista Previa</button>
     <button @click="validateFile" v-if="fileData.length > 0">Validar y Guardar</button>
     <button v-if="showSendButton" @click="sendToDatabase">Enviar a SIEC</button>
-    <!-- <button @click="validateFile" v-if="fileData.length > 0">Validar Archivo</button>
-    <button @click="saveFile"  v-if="isValid">Guardar Cambios</button> 
-    <button @click="saveFile"  v-if="fileData.length > 0">Guardar Cambios</button>  -->
-    <a v-if="downloadLink" :href="downloadLink" download="Formato15.xlsx">Descargar Archivo Validado</a>
+    <a v-if="downloadLink" :href="downloadLink" download="Formato15.xlsx">Descargar Archivo Validado</a> -->
 
     <!-- Tabla para visualizar y editar datos -->
     <div v-if="fileData.length > 0">
@@ -55,7 +68,9 @@ export default {
       showModal: false,
       isValid: false,
       modalMessage: '',
-      showSendButton: false
+      showSendButton: false,
+      ano: null,
+      mes: null,
     };
   },
   methods: {
@@ -72,9 +87,53 @@ export default {
       formData.append('file', this.file);
       try {
         const response = await axios.post('http://localhost:8086/api/excel/preview', formData);
+
         this.fileData = response.data;
       } catch (error) {
         this.handleError(error, 'Error al cargar vista previa.');
+      }
+    },// reportar la informacion generada desde la base de dato
+    async fetchData() {
+      if (!this.ano || !this.mes) {
+        this.modalMessage = "Por favor, ingrese el año y el mes.";
+        this.showModal = true;
+        return;
+      }
+
+      try {
+        const response = await axios.get("http://localhost:8086/api/excel/findFullInformation", {
+          params: {
+            ano: this.ano,
+            mes: this.mes
+          }
+        });
+
+        if (response.data && response.data.length > 0) {
+
+          this.fileData = response.data; // Actualiza los datos en la tabla
+          this.isValid = true; // Activa el botón de descarga y envío
+          this.modalMessage = "Datos cargados correctamente.";
+          this.showModal = true;
+        } else {
+          this.fileData = [];
+          this.isValid = false; // Desactiva el botón si no hay datos
+          this.modalMessage = "No se encontraron datos para el año y mes ingresados.";
+          this.showModal = true;
+        }
+      } catch (error) {
+        this.handleError(error, "Error al buscar los datos.");
+      }
+    },
+    async loadFile() {
+      try {
+        const response = await axios.get('http://localhost:8086/api/excel/loadFromFile');
+        const fileData = response.data;
+
+        // Combinar datos del archivo con los existentes
+        this.fileData = [...this.fileData, ...fileData];
+      } catch (error) {
+        this.modalMessage = 'Error al cargar datos desde el archivo.';
+        this.showModal = true;
       }
     },
     async validateFile() {
@@ -103,6 +162,37 @@ export default {
       } catch (error) {
         this.handleError(error, 'Error al enviar los datos a la base de datos.');
       }
+    },
+    downloadCSV() {
+      if (!this.fileData || this.fileData.length === 0) {
+        this.modalMessage = "No hay datos disponibles para descargar.";
+        this.showModal = true;
+        return;
+      }
+
+      // Generar contenido del archivo CSV
+      const header = Object.keys(this.fileData[0]).join(","); // Encabezados del archivo
+      const rows = this.fileData
+        .map(row => Object.values(row).map(value => `"${value}"`).join(",")) // Filas de datos
+        .join("\n"); // Separador de líneas
+
+      const csvContent = `${header}\n${rows}`;
+
+      // Crear un Blob para el CSV
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+
+      // Crear un enlace de descarga
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", "Formato15.csv");
+      document.body.appendChild(link);
+
+      // Activar la descarga
+      link.click();
+
+      // Limpiar el enlace
+      document.body.removeChild(link);
     },
     handleError(error, defaultMessage) {
       if (error.response && error.response.data) {
