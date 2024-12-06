@@ -1,20 +1,36 @@
-<template>
+<!-- <template>
   <div id="app">
     <img alt="Vue logo" src="./assets/EBSA_logo.png" class="logo">
     <HelloWorld msg="Formato 15 SUI" />
+    <login msg="Login" />
+  </div>
+</template> -->
+
+<template>
+  <div id="app">
+    <img alt="Vue logo" src="./assets/EBSA_logo.png" class="logo" />
+    <router-view /> <!-- Renderiza el componente según la ruta -->
   </div>
 </template>
 
 <script>
+export default {
+  name: 'App',
+};
+</script>
+
+<!-- <script>
 import HelloWorld from './components/ExcelUploader.vue'
+//import login from './components/LoginView.vue'
 
 export default {
   name: 'App',
   components: {
-    HelloWorld
+    HelloWorld,
+    //login
   }
 }
-</script>
+</script> -->
 
 <style>
 

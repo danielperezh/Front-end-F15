@@ -12,9 +12,9 @@
     </div>
 
     <!-- Botones de acciones -->
+    <button @click="loadFile">Cargar Formato 15 de ADMS</button>
     <button @click="validateFile" v-if="fileData.length > 0">Validar y Guardar</button>
     <button v-if="isValid && fileData.length > 0" @click="downloadCSV">Descargar Datos en CSV</button>
-    <button @click="loadFile">Cargar desde archivo</button>
     <!-- <button v-if="isValid && showSendButton" @click="sendToDatabase">Enviar a SIEC</button> -->
 
 
@@ -25,7 +25,7 @@
     <a v-if="downloadLink" :href="downloadLink" download="Formato15.xlsx">Descargar Archivo Validado</a> -->
 
     <!-- Tabla para visualizar y editar datos -->
-    <div v-if="fileData.length > 0">
+    <div v-if="fileData.length">
       <h3>Vista Previa del Archivo</h3>
       <div class="table-responsive">
         <table>
@@ -37,7 +37,7 @@
           <tbody>
             <tr v-for="(row, rowIndex) in fileData" :key="rowIndex">
               <td v-for="(value, key) in row" :key="key">
-                <input v-model="fileData[rowIndex][key]" />
+                <input class="data" v-model="fileData[rowIndex][key]" />
               </td>
             </tr>
           </tbody>
@@ -92,7 +92,7 @@ export default {
       } catch (error) {
         this.handleError(error, 'Error al cargar vista previa.');
       }
-    },// reportar la informacion generada desde la base de dato
+    },
     async fetchData() {
       if (!this.ano || !this.mes) {
         this.modalMessage = "Por favor, ingrese el año y el mes.";
@@ -104,19 +104,18 @@ export default {
         const response = await axios.get("http://localhost:8086/api/excel/findFullInformation", {
           params: {
             ano: this.ano,
-            mes: this.mes
-          }
+            mes: this.mes,
+          },
         });
 
         if (response.data && response.data.length > 0) {
+          // Combina los datos obtenidos con los ya existentes
+          this.fileData = [...this.fileData, ...response.data]; 
 
-          this.fileData = response.data; // Actualiza los datos en la tabla
           this.isValid = true; // Activa el botón de descarga y envío
           this.modalMessage = "Datos cargados correctamente.";
           this.showModal = true;
         } else {
-          this.fileData = [];
-          this.isValid = false; // Desactiva el botón si no hay datos
           this.modalMessage = "No se encontraron datos para el año y mes ingresados.";
           this.showModal = true;
         }
@@ -124,6 +123,7 @@ export default {
         this.handleError(error, "Error al buscar los datos.");
       }
     },
+
     async loadFile() {
       try {
         const response = await axios.get('http://localhost:8086/api/excel/loadFromFile');
@@ -240,7 +240,7 @@ button, a {
   color: black;
   border: none;
   cursor: pointer;
-  width: 20%;
+  width: auto;
   text-align: center;
   text-decoration: none;
 }
@@ -285,6 +285,10 @@ input {
   box-sizing: border-box;
   padding: 5px;
 }
+
+/* .data {
+  width: 70%;
+} */
 
 /* Estilos del modal */
 .modal {
