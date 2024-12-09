@@ -75,10 +75,12 @@ export default {
   
   <style scoped>
   .login-container {
-    max-width: 400px;
+    width: 100%;
+    max-width: 500px;
     margin: 50px auto;
-    padding: 20px;
-    background-color: #f4f4f4;
+    padding: 40px 50px 50px 40px;
+    color: black;
+    background-color: #fffcfc;
     border: 1px solid #ddd;
     border-radius: 5px;
     text-align: center;
@@ -92,6 +94,7 @@ export default {
   .form-group {
     margin-bottom: 15px;
     text-align: left;
+    width: 100%;
   }
   
   label {
@@ -100,25 +103,27 @@ export default {
   }
   
   input {
-    width: 100%;
-    padding: 10px;
-    margin-top: 5px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-  }
+  width: 100%; /* Se asegura de que el input ocupe todo el ancho del contenedor */
+  box-sizing: border-box; /* Incluye padding y borde dentro del ancho total */
+  padding: 10px;
+  color: black;
+  margin-top: 5px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
   
   button {
     width: 100%;
     padding: 10px;
-    background-color: #007bff;
-    color: white;
+    background-color: #ffc629;
+    color: black;
     border: none;
     border-radius: 5px;
     cursor: pointer;
   }
   
   button:hover {
-    background-color: #0056b3;
+    background-color: #dda50a;
   }
   
   .error-message {

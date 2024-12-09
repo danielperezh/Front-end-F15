@@ -1,9 +1,9 @@
 <template>
   <div class="excel-uploader">
     <h1 class="styled-header">Formato 15</h1>
-    
-    <!-- Campos para ingresar Año y Mes -->
-    <div>
+
+    <!-- Fase 1: Campos de Año y Mes -->
+    <div v-if="fase === 1">
       <label for="ano">Año:</label>
       <input type="number" id="ano" v-model="ano" placeholder="Ingrese el año" />
       <label for="mes">Mes:</label>
@@ -11,18 +11,20 @@
       <button @click="fetchData">Buscar Datos</button>
     </div>
 
-    <!-- Botones de acciones -->
-    <button @click="loadFile">Cargar Formato 15 de ADMS</button>
-    <button @click="validateFile" v-if="fileData.length > 0">Validar y Guardar</button>
-    <button v-if="isValid && fileData.length > 0" @click="downloadCSV">Descargar Datos en CSV</button>
-    <!-- <button v-if="isValid && showSendButton" @click="sendToDatabase">Enviar a SIEC</button> -->
+    <!-- Fase 2: Botón de Cargar archivo -->
+    <div v-if="fase === 2">
+      <button @click="loadFile">Unir Formato 15 de ADMS</button>
+    </div>
 
+    <!-- Fase 3: Botón de Validar y Guardar -->
+    <div v-if="fase === 3">
+      <button @click="validateFile" v-if="fileData.length > 0">Validar y Guardar</button>
+    </div>
 
-    <!-- <input class="cargue" type="file" @change="handleFileUpload" />
-    <button @click="previewFile">Cargar Vista Previa</button>
-    <button @click="validateFile" v-if="fileData.length > 0">Validar y Guardar</button>
-    <button v-if="showSendButton" @click="sendToDatabase">Enviar a SIEC</button>
-    <a v-if="downloadLink" :href="downloadLink" download="Formato15.xlsx">Descargar Archivo Validado</a> -->
+    <!-- Fase 4: Botón para Descargar CSV -->
+    <div v-if="fase === 4">
+      <button v-if="isValid && fileData.length > 0" @click="downloadCSV">Descargar Datos en CSV</button>
+    </div>
 
     <!-- Tabla para visualizar y editar datos -->
     <div v-if="fileData.length">
@@ -48,7 +50,7 @@
     <!-- Modal de alerta -->
     <div v-if="showModal" class="modal">
       <div class="modal-content">
-        <h3>Mensaje!</h3>
+        <h2>Mensaje!</h2>
         <p>{{ modalMessage }}</p>
         <button @click="closeModal">Cerrar</button>
       </div>
@@ -71,28 +73,10 @@ export default {
       showSendButton: false,
       ano: null,
       mes: null,
+      fase: 1, // Control de las fases
     };
   },
   methods: {
-    handleFileUpload(event) {
-      this.file = event.target.files[0];
-    },
-    async previewFile() {
-      if (!this.file) {
-        this.modalMessage = 'No hay ningún archivo seleccionado. Por favor suba uno.';
-        this.showModal = true;
-        return;
-      }
-      const formData = new FormData();
-      formData.append('file', this.file);
-      try {
-        const response = await axios.post('http://localhost:8086/api/excel/preview', formData);
-
-        this.fileData = response.data;
-      } catch (error) {
-        this.handleError(error, 'Error al cargar vista previa.');
-      }
-    },
     async fetchData() {
       if (!this.ano || !this.mes) {
         this.modalMessage = "Por favor, ingrese el año y el mes.";
@@ -109,12 +93,13 @@ export default {
         });
 
         if (response.data && response.data.length > 0) {
-          // Combina los datos obtenidos con los ya existentes
-          this.fileData = [...this.fileData, ...response.data]; 
-
+          this.fileData = [...this.fileData, ...response.data];
           this.isValid = true; // Activa el botón de descarga y envío
           this.modalMessage = "Datos cargados correctamente.";
           this.showModal = true;
+
+          // Cambiar a fase 2 (Cargar archivo)
+          this.fase = 2;
         } else {
           this.modalMessage = "No se encontraron datos para el año y mes ingresados.";
           this.showModal = true;
@@ -127,42 +112,37 @@ export default {
     async loadFile() {
       try {
         const response = await axios.get('http://localhost:8086/api/excel/loadFromFile');
-        const fileData = response.data;
-
-        // Combinar datos del archivo con los existentes
-        this.fileData = [...this.fileData, ...fileData];
+        this.fileData = [...this.fileData, ...response.data];
+        
+        // Cambiar a fase 3 (Validar y Guardar)
+        this.fase = 3;
       } catch (error) {
         this.modalMessage = 'Error al cargar datos desde el archivo.';
         this.showModal = true;
       }
     },
+
     async validateFile() {
       try {
         const response = await axios.post('http://localhost:8086/api/excel/validateAndSaveFile', this.fileData);
+        this.fileData = response.data;
+        
         this.modalMessage = 'El archivo es válido y cumple con todas las verificaciones.';
         this.showModal = true;
-        //Crear un enlace de descarga para el archivo
+
         const url = window.URL.createObjectURL(new Blob([response.data]));
         this.downloadLink = url;
 
-        // Muestra el botón "Enviar a SIEC" si la validación fue exitosa
         this.showSendButton = true;
+
+        // Cambiar a fase 4 (Descargar CSV)
+        this.fase = 4;
       } catch (error) {
         this.handleError(error, 'El archivo no cumple con las validaciones.');
-        this.showSendButton = false; // Oculta el botón si hay errores de validación
+        this.showSendButton = false;
       }
     },
-    // Nuevo método para enviar los datos validados a la base de datos
-    async sendToDatabase() {
-      try {
-        const response = await axios.post('http://localhost:8086/api/excel/sendToDatabase');
-        this.modalMessage = response.data;
-        this.showModal = true;
-        this.showSendButton = false; // Oculta el botón tras el envío exitoso
-      } catch (error) {
-        this.handleError(error, 'Error al enviar los datos a la base de datos.');
-      }
-    },
+
     downloadCSV() {
       if (!this.fileData || this.fileData.length === 0) {
         this.modalMessage = "No hay datos disponibles para descargar.";
@@ -170,30 +150,23 @@ export default {
         return;
       }
 
-      // Generar contenido del archivo CSV
-      const header = Object.keys(this.fileData[0]).join(","); // Encabezados del archivo
+      const header = Object.keys(this.fileData[0]).join(",");
       const rows = this.fileData
-        .map(row => Object.values(row).map(value => `"${value}"`).join(",")) // Filas de datos
-        .join("\n"); // Separador de líneas
+        .map(row => Object.values(row).map(value => `"${value}"`).join(","))
+        .join("\n");
 
       const csvContent = `${header}\n${rows}`;
-
-      // Crear un Blob para el CSV
       const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
       const url = URL.createObjectURL(blob);
 
-      // Crear un enlace de descarga
       const link = document.createElement("a");
       link.href = url;
       link.setAttribute("download", "Formato15.csv");
       document.body.appendChild(link);
-
-      // Activar la descarga
       link.click();
-
-      // Limpiar el enlace
       document.body.removeChild(link);
     },
+
     handleError(error, defaultMessage) {
       if (error.response && error.response.data) {
         this.modalMessage = error.response.data || defaultMessage;
@@ -202,13 +175,13 @@ export default {
       }
       this.showModal = true;
     },
+
     closeModal() {
       this.showModal = false;
     }
   }
 };
 </script>
-
 
 <style scoped>
 /* Estilos generales */
@@ -221,8 +194,8 @@ export default {
   padding: 0 10px;
 }
 
-.cargue {
-  width: auto !important;
+label, h3{
+  color: white;
 }
 
 .styled-header {
@@ -245,27 +218,23 @@ button, a {
   text-decoration: none;
 }
 
-a {
-  width: auto !important;
-}
-
 button:disabled {
   background-color: gray;
   cursor: not-allowed;
 }
 
-/* Estilos de la tabla */
 .table-responsive {
   overflow-x: auto;
   width: 100%;
+  border-radius: 10px;
 }
 
 table, tr {
   width: 100%;
-  border-collapse: collapse;
+  /* border-collapse: collapse; */
   margin-top: 20px;
-  /* background-color: rgb(253, 246, 237); */
   background-color: #e4e0d0;
+  border-radius: 5px;
 }
 
 th, td {
@@ -275,22 +244,36 @@ th, td {
 }
 
 th {
-  /* background-color: #f2f2f2; */
   background-color: #e4dfcb;
   font-weight: bold;
 }
 
 input {
-  width: 100%;
-  box-sizing: border-box;
-  padding: 5px;
+  width: 100%; /* Ocupa todo el ancho del contenedor */
+  box-sizing: border-box; /* Incluye el padding y borde dentro del ancho total */
+  padding: 10px; /* Espaciado interno más cómodo */
+  margin-top: 5px;
+  border: 1px solid #ccc; /* Borde sutil */
+  border-radius: 5px; /* Esquinas redondeadas */
+  font-size: 16px; /* Tamaño de fuente legible */
+  font-family: Arial, sans-serif; /* Fuente moderna */
+  background-color: #f9f9f9; /* Fondo ligeramente gris */
+  transition: border-color 0.3s ease, box-shadow 0.3s ease; /* Transiciones suaves para hover/focus */
+  margin-bottom: 20px;
 }
 
-/* .data {
-  width: 70%;
-} */
+/* Estilo al enfocar el campo */
+input:focus {
+  border-color: #030303; /* Azul brillante */
+  box-shadow: 0 0 5px rgba(0, 123, 255, 0.5); /* Resaltado suave */
+  outline: none; /* Eliminar el contorno predeterminado */
+}
 
-/* Estilos del modal */
+/* Cambiar el color del borde al pasar el mouse */
+input:hover {
+  border-color: #0056b3; /* Azul más oscuro */
+}
+
 .modal {
   display: flex;
   justify-content: center;
@@ -318,20 +301,5 @@ input {
   color: white;
   border: none;
   cursor: pointer;
-}
-
-/* Media queries para ajustar elementos en pantallas pequeñas */
-@media (max-width: 768px) {
-  .styled-header {
-    font-size: 36px;
-  }
-
-  button, a {
-    width: 80%;
-  }
-
-  th, td {
-    padding: 5px;
-  }
 }
 </style>
