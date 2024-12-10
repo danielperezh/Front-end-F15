@@ -8,7 +8,7 @@
 
 <template>
   <div id="app">
-    <img alt="Vue logo" src="./assets/Ebsa.png" class="logo" />
+    <img alt="Vue logo" src="./assets/EBSA_logo.png" class="logo" />
     <router-view /> <!-- Renderiza el componente según la ruta -->
   </div>
 </template>
