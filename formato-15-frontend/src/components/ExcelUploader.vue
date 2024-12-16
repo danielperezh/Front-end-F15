@@ -1,4 +1,8 @@
 <template>
+  <div v-if="isLoading" class="spinner-overlay">
+  <div class="spinner"></div>
+  </div>
+
   <div class="excel-uploader">
     <h1 class="styled-header">Formato 15</h1>
 
@@ -13,7 +17,17 @@
 
     <!-- Fase 2: Botón de Cargar archivo -->
     <div v-if="fase === 2">
-      <button @click="loadFile">Unir Formato 15 de ADMS</button>
+      <div>
+        <label for="year">Año:</label>
+        <input type="text" id="year" v-model="selectedYear" placeholder="Ej: 2024" />
+
+        <label for="month">Mes:</label>
+        <input type="text" id="month" v-model="selectedMonth" placeholder="Ej: 11" />
+
+        <button @click="loadFile">Buscar Archivo</button>
+      </div>
+
+      <!-- <button @click="loadFile">Unir Formato 15 de ADMS</button> -->
     </div>
 
     <!-- Fase 3: Botón de Validar y Guardar -->
@@ -66,6 +80,7 @@ export default {
     return {
       file: null,
       fileData: [],
+      isLoading: false,
       downloadLink: null,
       showModal: false,
       isValid: false,
@@ -73,6 +88,8 @@ export default {
       showSendButton: false,
       ano: null,
       mes: null,
+      selectedYear: '',   // Año ingresado por el usuario
+      selectedMonth: '',  // Mes ingresado por el usuari
       fase: 1, // Control de las fases
     };
   },
@@ -83,7 +100,7 @@ export default {
         this.showModal = true;
         return;
       }
-
+      this.isLoading = true;
       try {
         const response = await axios.get("http://localhost:8086/api/excel/findFullInformation", {
           params: {
@@ -102,33 +119,46 @@ export default {
           this.fase = 2;
         } else {
           this.modalMessage = "No se encontraron datos para el año y mes ingresados.";
-          this.showModal = true;
+          // this.showModal = true;
         }
       } catch (error) {
         this.handleError(error, "Error al buscar los datos.");
-      }
-    },
-
-    async loadFile() {
-      try {
-        const response = await axios.get('http://localhost:8086/api/excel/loadFromFile');
-        this.fileData = [...this.fileData, ...response.data];
-        
-        // Cambiar a fase 3 (Validar y Guardar)
-        this.fase = 3;
-      } catch (error) {
-        this.modalMessage = 'Error al cargar datos desde el archivo.';
+      } finally {
+        this.isLoading = false; // Desactiva el spinner
         this.showModal = true;
       }
     },
 
+    async loadFile() {
+      this.isLoading = true; // Activa el spinner
+      try {
+        const year = this.selectedYear;
+        const month = this.selectedMonth;
+
+        const response = await axios.get("http://localhost:8086/api/excel/loadFromFile", {
+          params: { year, month },
+        });
+
+        this.fileData = [...this.fileData, ...response.data];
+        this.fase = 3;
+      } catch (error) {
+        this.modalMessage = "Error al cargar datos desde el archivo.";
+        this.showModal = true;
+      } finally {
+        this.isLoading = false; // Desactiva el spinner
+      }
+    },
+
+
+
     async validateFile() {
+      this.isLoading = true;
       try {
         const response = await axios.post('http://localhost:8086/api/excel/validateAndSaveFile', this.fileData);
         this.fileData = response.data;
         
         this.modalMessage = 'El archivo es válido y cumple con todas las verificaciones.';
-        this.showModal = true;
+        // this.showModal = true;
 
         const url = window.URL.createObjectURL(new Blob([response.data]));
         this.downloadLink = url;
@@ -140,6 +170,9 @@ export default {
       } catch (error) {
         this.handleError(error, 'El archivo no cumple con las validaciones.');
         this.showSendButton = false;
+      } finally {
+        this.isLoading = false; // Desactiva el spinner
+        this.showModal = true;
       }
     },
 
@@ -302,4 +335,33 @@ input:hover {
   border: none;
   cursor: pointer;
 }
+
+.spinner-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+.spinner {
+  width: 50px;
+  height: 50px;
+  border: 6px solid #f3f3f3;
+  border-top: 6px solid #3498db;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+
 </style>
