@@ -51,6 +51,7 @@ export default {
       try {
         console.log("Enviando credenciales:", this.credentials); // Imprime el objeto enviado
         const response = await axios.post("http://localhost:8086/api/auth/login", this.credentials);
+        
 
         if (response.data.success) {
           console.log("Respuesta del backend:", response.data); // Imprime la respuesta del backend

@@ -19,19 +19,6 @@ export default {
 };
 </script>
 
-<!-- <script>
-import HelloWorld from './components/ExcelUploader.vue'
-//import login from './components/LoginView.vue'
-
-export default {
-  name: 'App',
-  components: {
-    HelloWorld,
-    //login
-  }
-}
-</script> -->
-
 <style>
 
 .excel-uploader {
