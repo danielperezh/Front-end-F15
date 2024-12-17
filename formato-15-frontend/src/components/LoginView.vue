@@ -133,5 +133,9 @@ export default {
     color: red;
     margin-top: 15px;
   }
+
+  .logo {
+    margin-top: 100px;
+  }
   </style>
   
