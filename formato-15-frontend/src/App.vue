@@ -8,8 +8,7 @@
 
 <template>
   <div id="app">
-    <img alt="Vue logo" src="./assets/EBSA_logo.png" class="logo" />
-    <router-view /> <!-- Renderiza el componente según la ruta -->
+    <router-view /> 
   </div>
 </template>
 
@@ -36,15 +35,8 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
-  /* color: #ffffff; */
-  margin-top: 60px;
-  /* background: linear-gradient(
-    rgba(0, 0, 0, 0.6),  
-    rgba(0, 0, 0, 0.199) 
-  ), #ffffff;   */
+  margin: 0;
   background-image: linear-gradient(180deg, #2E291A 5%, #3E3621 26%, #61583F 44%, #DBD2BA 100%);
-  padding: 20px;
-  /* height: 100vh;  */
 }
 
 

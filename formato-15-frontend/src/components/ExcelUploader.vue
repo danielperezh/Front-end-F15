@@ -1,7 +1,32 @@
 <template>
-  <div v-if="isLoading" class="spinner-overlay">
+  <!-- <div v-if="isLoading" class="spinner-overlay">
   <div class="spinner"></div>
+  </div> -->
+
+  <!-- Header -->
+  <header class="app-header">
+    <div class="user-info">
+      <!-- Botón desplegable -->
+      <div class="dropdown">
+        <button @click="toggleDropdown" class="dropdown-toggle">
+          Bienvenido, {{ userName }}
+          <span class="caret">&#9660;</span>
+        </button>
+        <ul v-if="isDropdownOpen" class="dropdown-menu">
+          <li @click="logout">Cerrar Sesión</li>
+        </ul>
+      </div>
+    </div>
+  </header>
+
+  <!-- Contenido principal -->
+  <div v-if="isLoading" class="spinner-overlay">
+    <div class="spinner"></div>
   </div>
+
+
+  <img alt="Vue logo" src="../assets/Ebsa.png" class="logo" />
+
 
   <div class="excel-uploader">
     <h1 class="styled-header">Formato 15</h1>
@@ -12,7 +37,7 @@
       <input type="number" id="ano" v-model="ano" placeholder="Ingrese el año" />
       <label for="mes">Mes:</label>
       <input type="number" id="mes" v-model="mes" placeholder="Ingrese el mes" />
-      <button @click="fetchData">Buscar Datos</button>
+      <button @click="fetchData">Buscar datos en Siec</button>
     </div>
 
     <!-- Fase 2: Botón de Cargar archivo -->
@@ -24,7 +49,7 @@
         <label for="month">Mes:</label>
         <input type="text" id="month" v-model="selectedMonth" placeholder="Ej: 11" />
 
-        <button @click="loadFile">Buscar Archivo</button>
+        <button @click="loadFile">Buscar archivo generado por ADMS</button>
       </div>
 
       <!-- <button @click="loadFile">Unir Formato 15 de ADMS</button> -->
@@ -88,12 +113,40 @@ export default {
       showSendButton: false,
       ano: null,
       mes: null,
+      userName: '',
       selectedYear: '',   // Año ingresado por el usuario
       selectedMonth: '',  // Mes ingresado por el usuari
       fase: 1, // Control de las fases
+      isDropdownOpen: false,
     };
   },
+  created() {
+    // Extraer el nombre del usuario del token al cargar el componente
+    this.getUserName();
+  },
   methods: {
+    getUserName() {
+      const token = localStorage.getItem('authToken');
+      if (token) {
+        try {
+          const payloadBase64 = token.split('.')[1]; // Extraer la parte del payload
+          const payload = JSON.parse(atob(payloadBase64)); // Decodificar y parsear JSON
+          this.userName = payload.nombre || 'Usuario'; // Extraer el campo 'nombre'
+        } catch (error) {
+          console.error('Error al leer el token:', error.message);
+          this.userName = 'Usuario'; // Fallback en caso de error
+        }
+      } else {
+        this.userName = 'Usuario'; // Si no hay token
+      }
+    },
+    toggleDropdown() {
+      this.isDropdownOpen = !this.isDropdownOpen; // Alternar estado
+    },
+    logout() {
+      localStorage.removeItem('authToken'); // Eliminar el token
+      this.$router.push({ name: 'Login' }); // Redirigir al login
+    },
     async fetchData() {
       if (!this.ano || !this.mes) {
         this.modalMessage = "Por favor, ingrese el año y el mes.";
@@ -260,6 +313,7 @@ button:disabled {
   overflow-x: auto;
   width: 100%;
   border-radius: 10px;
+  margin-bottom: 50px;
 }
 
 table, tr {
@@ -361,6 +415,61 @@ input:hover {
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
+}
+
+.app-header {
+  background-color: #273544;
+  color: #fff;
+  padding: 10px 20px;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  margin-bottom: 50px;
+}
+
+.user-info {
+  position: relative;
+}
+
+.dropdown-toggle {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+.dropdown-toggle .caret {
+  margin-left: 5px;
+  font-size: 12px;
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background-color: #ffc629;
+  color: black;
+  border: 1px solid #ccc;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  width: 150px;
+  z-index: 1000;
+}
+
+.dropdown-menu li {
+  padding: 10px;
+  color: #333;
+  cursor: pointer;
+}
+
+.dropdown-menu li:hover {
+  background-color: #e9ae0d;
 }
 
 

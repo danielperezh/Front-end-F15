@@ -1,4 +1,6 @@
 <template>
+  <img alt="Vue logo" src="../assets/Ebsa.png" class="logo" />
+
   <div class="login-container">
     <h1>Inicio de Sesión</h1>
 
