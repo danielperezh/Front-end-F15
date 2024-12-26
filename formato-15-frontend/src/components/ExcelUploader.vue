@@ -1,8 +1,4 @@
 <template>
-  <!-- <div v-if="isLoading" class="spinner-overlay">
-  <div class="spinner"></div>
-  </div> -->
-
   <!-- Header -->
   <header class="app-header">
     <div class="user-info">
@@ -24,35 +20,27 @@
     <div class="spinner"></div>
   </div>
 
-
   <img alt="Vue logo" src="../assets/Ebsa.png" class="logo" />
-
 
   <div class="excel-uploader">
     <h1 class="styled-header">Formato 15</h1>
 
     <!-- Fase 1: Campos de Año y Mes -->
-    <div v-if="fase === 1">
+    <div v-if="fase === 1" class="form-container">
       <label for="ano">Año:</label>
       <input type="number" id="ano" v-model="ano" placeholder="Ingrese el año" />
       <label for="mes">Mes:</label>
       <input type="number" id="mes" v-model="mes" placeholder="Ingrese el mes" />
-      <button @click="fetchData">Buscar datos en Siec</button>
+      <button class="boton" @click="fetchData">Buscar datos en Siec</button>
     </div>
 
     <!-- Fase 2: Botón de Cargar archivo -->
-    <div v-if="fase === 2">
-      <div>
-        <label for="year">Año:</label>
-        <input type="text" id="year" v-model="selectedYear" placeholder="Ej: 2024" />
-
-        <label for="month">Mes:</label>
-        <input type="text" id="month" v-model="selectedMonth" placeholder="Ej: 11" />
-
-        <button @click="loadFile">Buscar archivo generado por ADMS</button>
-      </div>
-
-      <!-- <button @click="loadFile">Unir Formato 15 de ADMS</button> -->
+    <div v-if="fase === 2" class="form-container">
+      <label for="year">Año:</label>
+      <input type="text" id="year" v-model="selectedYear" placeholder="Ej: 2024" />
+      <label for="month">Mes:</label>
+      <input type="text" id="month" v-model="selectedMonth" placeholder="Ej: 11" />
+      <button class="boton" @click="loadFile">Buscar archivo generado por ADMS</button>
     </div>
 
     <!-- Fase 3: Botón de Validar y Guardar -->
@@ -66,7 +54,7 @@
     </div>
 
     <!-- Tabla para visualizar y editar datos -->
-    <div v-if="fileData.length">
+    <!-- <div v-if="fileData.length" class="table-container">
       <h3>Vista Previa del Archivo</h3>
       <div class="table-responsive">
         <table>
@@ -84,7 +72,29 @@
           </tbody>
         </table>
       </div>
+    </div> -->
+    <div v-if="fileData.length" class="table-container">
+      <h3>Vista Previa del Archivo</h3>
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th> <!-- Nueva columna para el consecutivo -->
+              <th v-for="(value, key) in fileData[0]" :key="key">{{ key }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(row, rowIndex) in fileData" :key="rowIndex">
+              <td>{{ rowIndex + 1 }}</td> <!-- Muestra el índice + 1 como consecutivo -->
+              <td v-for="(value, key) in row" :key="key">
+                <input class="data" v-model="fileData[rowIndex][key]" />
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
+
 
     <!-- Modal de alerta -->
     <div v-if="showModal" class="modal">
@@ -269,6 +279,7 @@ export default {
 };
 </script>
 
+
 <style scoped>
 /* Estilos generales */
 .excel-uploader {
@@ -282,6 +293,12 @@ export default {
 
 label, h3{
   color: white;
+  margin-right: 10px;
+  margin-left: 10px;
+}
+
+.logo{
+  margin-top: 40px;
 }
 
 .styled-header {
@@ -304,49 +321,18 @@ button, a {
   text-decoration: none;
 }
 
+.boton {
+  margin-left: 15px;
+}
+
 button:disabled {
   background-color: gray;
   cursor: not-allowed;
 }
 
-.table-responsive {
-  overflow-x: auto;
-  width: 100%;
-  border-radius: 10px;
-  margin-bottom: 50px;
-}
-
-table, tr {
-  width: 100%;
-  /* border-collapse: collapse; */
-  margin-top: 20px;
-  background-color: #e4e0d0;
-  border-radius: 5px;
-}
-
-th, td {
-  border: 1px solid #ddd;
-  padding: 8px;
-  text-align: center;
-}
-
-th {
-  background-color: #e4dfcb;
-  font-weight: bold;
-}
-
-input {
-  width: 100%; /* Ocupa todo el ancho del contenedor */
-  box-sizing: border-box; /* Incluye el padding y borde dentro del ancho total */
-  padding: 10px; /* Espaciado interno más cómodo */
-  margin-top: 5px;
-  border: 1px solid #ccc; /* Borde sutil */
-  border-radius: 5px; /* Esquinas redondeadas */
-  font-size: 16px; /* Tamaño de fuente legible */
-  font-family: Arial, sans-serif; /* Fuente moderna */
-  background-color: #f9f9f9; /* Fondo ligeramente gris */
-  transition: border-color 0.3s ease, box-shadow 0.3s ease; /* Transiciones suaves para hover/focus */
-  margin-bottom: 20px;
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
 }
 
 /* Estilo al enfocar el campo */
@@ -422,13 +408,16 @@ input:hover {
   color: #fff;
   padding: 10px 20px;
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
   align-items: center;
-  margin-bottom: 50px;
 }
 
 .user-info {
   position: relative;
+  display: flex; /* Asegura que el contenido del dropdown esté alineado correctamente */
+  justify-content: flex-start; /* Mueve el botón hacia la izquierda */
+  align-items: center;
+  margin-left: 0; /* Asegura que no tenga margen izquierdo innecesario */
 }
 
 .dropdown-toggle {
@@ -473,4 +462,96 @@ input:hover {
 }
 
 
+.excel-uploader {
+  text-align: center;
+  margin-top: 20px;
+  padding: 0 15px;
+}
+
+.styled-header {
+  font-size: 36px;
+  color: white;
+  -webkit-text-stroke: 1px black;
+  font-weight: bold;
+  margin-bottom: 20px;
+}
+
+button {
+  margin-top: 10px;
+  padding: 10px;
+  background-color: #ffc629;
+  color: black;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+button:disabled {
+  background-color: gray;
+  cursor: not-allowed;
+}
+
+.table-container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.table-responsive {
+  overflow-x: auto;
+  width: 100%;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+  background-color: #e4e0d0;
+}
+
+th, td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: center;
+}
+
+input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 14px;
+  width: auto;
+}
+
+/* Responsividad */
+@media (max-width: 768px) {
+  .styled-header {
+    font-size: 24px;
+  }
+
+  button {
+    padding: 8px;
+    font-size: 14px;
+  }
+
+  th, td {
+    padding: 6px;
+  }
+}
+
+@media (max-width: 480px) {
+  .styled-header {
+    font-size: 20px;
+  }
+
+  input {
+    font-size: 12px;
+  }
+
+  th, td {
+    font-size: 12px;
+  }
+}
 </style>

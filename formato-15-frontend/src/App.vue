@@ -1,14 +1,6 @@
-<!-- <template>
-  <div id="app">
-    <img alt="Vue logo" src="./assets/EBSA_logo.png" class="logo">
-    <HelloWorld msg="Formato 15 SUI" />
-    <login msg="Login" />
-  </div>
-</template> -->
-
 <template>
   <div id="app">
-    <router-view /> 
+    <router-view />
   </div>
 </template>
 
@@ -19,10 +11,11 @@ export default {
 </script>
 
 <style>
-
 .excel-uploader {
-  text-align: center; /* Centra el contenido dentro del div */
+  text-align: center;
+  /* Centra el contenido dentro del div */
   margin-top: 40px;
+
 }
 
 #app {
@@ -37,23 +30,19 @@ body {
   text-align: center;
   margin: 0;
   background-image: linear-gradient(180deg, #2E291A 5%, #3E3621 26%, #61583F 44%, #DBD2BA 100%);
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
 }
 
-
-.logo {
-  width: 170px; /* Ajusta el tamaño del logo */
-  margin-bottom: 20px; /* Espacio entre el logo y el contenido */
-}
-
-h1 {
+/* h1 {
   font-size: 2.5rem;
-  /* color: #3498db; */
   margin-bottom: 20px;
 }
 
 .file-input {
-  display: block; /* Hace que el input ocupe toda la línea */
-  margin: 10px auto; /* Centra el input y añade espacio inferior */
+  display: block; 
+  margin: 10px auto; 
   padding: 10px;
   font-size: 1rem;
 }
@@ -92,6 +81,5 @@ a, button:hover {
   font-size: 1.2rem;
   color: #2c3e50;
   text-decoration: underline;
-}
-
+} */
 </style>
