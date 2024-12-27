@@ -54,38 +54,19 @@
     </div>
 
     <!-- Tabla para visualizar y editar datos -->
-    <!-- <div v-if="fileData.length" class="table-container">
-      <h3>Vista Previa del Archivo</h3>
-      <div class="table-responsive">
-        <table>
-          <thead>
-            <tr>
-              <th v-for="(value, key) in fileData[0]" :key="key">{{ key }}</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="(row, rowIndex) in fileData" :key="rowIndex">
-              <td v-for="(value, key) in row" :key="key">
-                <input class="data" v-model="fileData[rowIndex][key]" />
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div> -->
     <div v-if="fileData.length" class="table-container">
       <h3>Vista Previa del Archivo</h3>
       <div class="table-responsive">
         <table>
           <thead>
             <tr>
-              <th>#</th> <!-- Nueva columna para el consecutivo -->
+              <th>#</th> 
               <th v-for="(value, key) in fileData[0]" :key="key">{{ key }}</th>
             </tr>
           </thead>
           <tbody>
             <tr v-for="(row, rowIndex) in fileData" :key="rowIndex">
-              <td>{{ rowIndex + 1 }}</td> <!-- Muestra el índice + 1 como consecutivo -->
+              <td>{{ rowIndex + 1 }}</td> 
               <td v-for="(value, key) in row" :key="key">
                 <input class="data" v-model="fileData[rowIndex][key]" />
               </td>
@@ -97,13 +78,25 @@
 
 
     <!-- Modal de alerta -->
-    <div v-if="showModal" class="modal">
+    <!-- <div v-if="showModal" class="modal">
       <div class="modal-content">
         <h2>Mensaje!</h2>
         <p>{{ modalMessage }}</p>
         <button @click="closeModal">Cerrar</button>
       </div>
+    </div> -->
+
+    <div v-if="showModal" class="modal">
+      <div class="modal-content">
+        <h2>Mensaje!</h2>
+        <!-- Usa v-html para renderizar el contenido con HTML -->
+        <p v-html="modalMessage"></p>
+        <button @click="closeModal">Cerrar</button>
+      </div>
     </div>
+
+
+    
   </div>
 </template>
 
@@ -165,7 +158,7 @@ export default {
       }
       this.isLoading = true;
       try {
-        const response = await axios.get("http://localhost:8086/api/excel/findFullInformation", {
+        const response = await axios.get("http://formato15.ebsa.com.co:8086/api/excel/findFullInformation", {
           params: {
             ano: this.ano,
             mes: this.mes,
@@ -198,7 +191,7 @@ export default {
         const year = this.selectedYear;
         const month = this.selectedMonth;
 
-        const response = await axios.get("http://localhost:8086/api/excel/loadFromFile", {
+        const response = await axios.get("http://formato15.ebsa.com.co:8086/api/excel/loadFromFile", {
           params: { year, month },
         });
 
@@ -217,7 +210,7 @@ export default {
     async validateFile() {
       this.isLoading = true;
       try {
-        const response = await axios.post('http://localhost:8086/api/excel/validateAndSaveFile', this.fileData);
+        const response = await axios.post('http://formato15.ebsa.com.co:8086/api/excel/validateAndSaveFile', this.fileData);
         this.fileData = response.data;
         
         this.modalMessage = 'El archivo es válido y cumple con todas las verificaciones.';
