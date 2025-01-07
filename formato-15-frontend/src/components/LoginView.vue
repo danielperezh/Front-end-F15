@@ -1,7 +1,9 @@
 <template>
   <div class="login-wrapper">
+    <h1 class="styled-header">Formato 15</h1>
     <!-- Logo -->
-    <img alt="Vue logo" src="../assets/Ebsa.png" class="logo" />
+    <img alt="Vue logo" src="../assets/EBSA_logo.png" class="logo" />
+    
 
     <div class="login-container">
       <h1>Inicio de Sesión</h1>
@@ -46,7 +48,8 @@ import axios from "axios";
 axios.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("authToken");
-    if (token && config.url !== "http://formato15.ebsa.com.co:8086/api/auth/login") {
+    // if (token && config.url !== "http://formato15.ebsa.com.co:8086/api/auth/login") {
+    if (token && config.url !== "http://localhost:8086/api/auth/login") {
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
@@ -70,7 +73,8 @@ export default {
     async handleLogin() {
       try {
         console.log("Enviando credenciales:", this.credentials); // Imprime el objeto enviado
-        const response = await axios.post("http://formato15.ebsa.com.co:8086/api/auth/login", this.credentials);
+        // const response = await axios.post("http://formato15.ebsa.com.co:8086/api/auth/login", this.credentials);
+        const response = await axios.post("http://localhost:8086/api/auth/login", this.credentials);
         
 
         if (response.data.success) {
@@ -95,6 +99,13 @@ export default {
 
 
 <style scoped>
+
+body{
+  background-image: linear-gradient(180deg, #d1d5da 5%, rgb(219, 218, 214) 26%, #dadee2 44%, #F1F5FA 100%);
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+}
 /* Contenedor principal para centrar elementos vertical y horizontalmente */
 .login-wrapper {
   display: flex;
@@ -111,6 +122,15 @@ export default {
   max-width: 100%;
   width: 200px; /* Tamaño inicial del logo */
   height: auto;
+  margin-bottom: 20px;
+}
+
+.styled-header {
+  font-family: 'Raleway', sans-serif;
+  font-size: 38px;
+  color: black;
+  /* -webkit-text-stroke: 2px black;
+  font-weight: bold; */
   margin-bottom: 20px;
 }
 

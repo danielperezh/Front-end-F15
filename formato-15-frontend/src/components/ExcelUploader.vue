@@ -20,7 +20,7 @@
     <div class="spinner"></div>
   </div>
 
-  <img alt="Vue logo" src="../assets/Ebsa.png" class="logo" />
+  <img alt="Vue logo" src="../assets/EBSA_logo.png" class="logo" />
 
   <div class="excel-uploader">
     <h1 class="styled-header">Formato 15</h1>
@@ -104,6 +104,7 @@
 import axios from 'axios';
 
 export default {
+  
   data() {
     return {
       file: null,
@@ -158,7 +159,8 @@ export default {
       }
       this.isLoading = true;
       try {
-        const response = await axios.get("http://formato15.ebsa.com.co:8086/api/excel/findFullInformation", {
+        // const response = await axios.get("http://formato15.ebsa.com.co:8086/api/excel/findFullInformation", {
+        const response = await axios.get("http://localhost:8086/api/excel/findFullInformation", {
           params: {
             ano: this.ano,
             mes: this.mes,
@@ -191,7 +193,8 @@ export default {
         const year = this.selectedYear;
         const month = this.selectedMonth;
 
-        const response = await axios.get("http://formato15.ebsa.com.co:8086/api/excel/loadFromFile", {
+        // const response = await axios.get("http://formato15.ebsa.com.co:8086/api/excel/loadFromFile", {
+        const response = await axios.get("http://localhost:8086/api/excel/loadFromFile", {
           params: { year, month },
         });
 
@@ -210,7 +213,8 @@ export default {
     async validateFile() {
       this.isLoading = true;
       try {
-        const response = await axios.post('http://formato15.ebsa.com.co:8086/api/excel/validateAndSaveFile', this.fileData);
+        // const response = await axios.post('http://formato15.ebsa.com.co:8086/api/excel/validateAndSaveFile', this.fileData);
+        const response = await axios.post('http://localhost:8086/api/excel/validateAndSaveFile', this.fileData);
         this.fileData = response.data;
         
         this.modalMessage = 'El archivo es válido y cumple con todas las verificaciones.';
@@ -285,16 +289,21 @@ export default {
 }
 
 label, h3{
-  color: white;
+  color: black;
   margin-right: 10px;
   margin-left: 10px;
+  margin-bottom: 5px;
+  margin-top: 50px;
+  font-family: 'Times New Roman', serif; 
 }
 
 .logo{
   margin-top: 40px;
+  max-width: 13%;
 }
 
 .styled-header {
+  font-family: 'Raleway', sans-serif;
   font-size: 48px;
   color: white;
   -webkit-text-stroke: 2px black;
@@ -325,7 +334,7 @@ button:disabled {
 
 body {
   margin: 0;
-  font-family: Arial, sans-serif;
+  /* font-family: Arial, sans-serif; */
 }
 
 /* Estilo al enfocar el campo */
@@ -397,7 +406,7 @@ input:hover {
 }
 
 .app-header {
-  background-color: #273544;
+  background-color: #4A5A6C;
   color: #fff;
   padding: 10px 20px;
   display: flex;
@@ -472,7 +481,8 @@ input:hover {
 button {
   margin-top: 10px;
   padding: 10px;
-  background-color: #ffc629;
+  /* background-color: #ffc629; */
+  background-color: #FFD971;
   color: black;
   border: none;
   border-radius: 5px;
@@ -499,13 +509,15 @@ table {
   width: 100%;
   border-collapse: collapse;
   margin-top: 20px;
-  background-color: #e4e0d0;
+  background-color: #f8f6ee;
 }
 
 th, td {
-  border: 1px solid #ddd;
+  /* border: 1px solid #ddd; */
+  border: 0.5px solid #F1F5FA;
   padding: 8px;
   text-align: center;
+  font-family: 'Times New Roman', serif; 
 }
 
 input {
