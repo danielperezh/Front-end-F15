@@ -48,8 +48,8 @@ import axios from "axios";
 axios.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("authToken");
-    // if (token && config.url !== "http://formato15.ebsa.com.co:8086/api/auth/login") {
-    if (token && config.url !== "http://localhost:8086/api/auth/login") {
+    if (token && config.url !== "http://formato15.ebsa.com.co:8086/api/auth/login") {
+    //if (token && config.url !== "http://localhost:8086/api/auth/login") {
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
@@ -73,8 +73,8 @@ export default {
     async handleLogin() {
       try {
         console.log("Enviando credenciales:", this.credentials); // Imprime el objeto enviado
-        // const response = await axios.post("http://formato15.ebsa.com.co:8086/api/auth/login", this.credentials);
-        const response = await axios.post("http://localhost:8086/api/auth/login", this.credentials);
+        const response = await axios.post("http://formato15.ebsa.com.co:8086/api/auth/login", this.credentials);
+        //const response = await axios.post("http://localhost:8086/api/auth/login", this.credentials);
         
 
         if (response.data.success) {
