@@ -1,4 +1,8 @@
 <template>
+  <div v-if="isLoading" class="spinner-overlay">
+    <div class="spinner"></div>
+  </div>
+
   <div class="login-wrapper">
     <h1 class="styled-header">Formato 15</h1>
     <!-- Logo -->
@@ -43,56 +47,54 @@
 <script>
 import axios from "axios";
 
-
 // Configura Axios para agregar automáticamente el token JWT en el encabezado
 axios.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("authToken");
     if (token && config.url !== "http://formato15.ebsa.com.co:8086/api/auth/login") {
-    //if (token && config.url !== "http://localhost:8086/api/auth/login") {
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
 export default {
   data() {
     return {
       credentials: {
-        usuario: "", // Cambiar a "usuario" para coincidir con el backend
-        contrasena: "", // Cambiar a "contrasena" para coincidir con el backend
+        usuario: "",
+        contrasena: "",
       },
+      isLoading: false,
       errorMessage: "",
     };
   },
   methods: {
     async handleLogin() {
+      this.isLoading = true; // Activa el spinner
       try {
-        console.log("Enviando credenciales:", this.credentials); // Imprime el objeto enviado
-        const response = await axios.post("http://formato15.ebsa.com.co:8086/api/auth/login", this.credentials);
-        //const response = await axios.post("http://localhost:8086/api/auth/login", this.credentials);
-        
+        const response = await axios.post(
+          "http://formato15.ebsa.com.co:8086/api/auth/login",
+          this.credentials
+        );
 
         if (response.data.success) {
-          console.log("Respuesta del backend:", response.data); // Imprime la respuesta del backend
           localStorage.setItem("authToken", response.data.token);
           this.$router.push({ name: "Formato15" });
         } else {
           this.errorMessage = response.data.message || "Credenciales incorrectas.";
         }
       } catch (error) {
-        console.error("Error en la solicitud:", error); // Imprime el error
         if (error.response && error.response.data && error.response.data.message) {
           this.errorMessage = error.response.data.message;
         } else {
           this.errorMessage = "Error al intentar iniciar sesión. Intente nuevamente.";
         }
+      } finally {
+        this.isLoading = false; // Desactiva el spinner
       }
-    }
+    },
   },
 };
 </script>
@@ -235,5 +237,32 @@ button:hover {
     font-size: 0.8rem;
     padding: 6px;
   }
+}
+
+.spinner-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+.spinner {
+  width: 50px;
+  height: 50px;
+  border: 6px solid #f3f3f3;
+  border-top: 6px solid #3498db;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 </style>
