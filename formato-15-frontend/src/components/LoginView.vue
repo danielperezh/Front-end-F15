@@ -51,7 +51,8 @@ import axios from "axios";
 axios.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("authToken");
-    if (token && config.url !== "http://formato15.ebsa.com.co:8086/api/auth/login") {
+    //if (token && config.url !== "http://formato15.ebsa.com.co:8086/api/auth/login") {
+    if (token && config.url !== "http://localhost:8086/api/auth/login") {
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
@@ -75,7 +76,8 @@ export default {
       this.isLoading = true; // Activa el spinner
       try {
         const response = await axios.post(
-          "http://formato15.ebsa.com.co:8086/api/auth/login",
+          //"http://formato15.ebsa.com.co:8086/api/auth/login",
+          "http://localhost:8086/api/auth/login",
           this.credentials
         );
 
