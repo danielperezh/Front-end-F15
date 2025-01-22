@@ -214,7 +214,7 @@ export default {
       this.isLoading = true;
       try {
         //const response = await axios.post('http://formato15.ebsa.com.co:8086/api/excel/validateAndSaveFile', this.fileData);
-        const response = await axios.post('http://localhost:8086/api/excel/validateAndSaveFile', this.fileData);
+        const response = await axios.post('http://localhost:8086/api/validateAndSaveFile', this.fileData);
         this.fileData = response.data;
         
         this.modalMessage = 'El archivo es válido y cumple con todas las verificaciones.';
@@ -226,7 +226,7 @@ export default {
         this.showSendButton = true;
 
         // Cambiar a fase 4 (Descargar CSV)
-        this.fase = 4;
+        //this.fase = 4;
       } catch (error) {
         this.handleError(error, 'El archivo no cumple con las validaciones.');
         this.showSendButton = false;
