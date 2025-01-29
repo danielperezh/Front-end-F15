@@ -46,25 +46,26 @@
   
 <script>
 import axios from "axios";
-
 // Configura Axios para agregar automáticamente el token JWT en el encabezado
 axios.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("authToken");
-    if (token && config.url !== "http://formato15.ebsa.com.co:8086/api/auth/login") {
+    //if (token && config.url !== "http://formato15.ebsa.com.co:8086/api/auth/login") {
+    if (token && config.url !== "http://localhost:8086/api/auth/login") {
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => {
+    return Promise.reject(error);
+  }
 );
-
 export default {
   data() {
     return {
       credentials: {
-        usuario: "",
-        contrasena: "",
+        usuario: "", // Cambiar a "usuario" para coincidir con el backend
+        contrasena: "", // Cambiar a "contrasena" para coincidir con el backend
       },
       isLoading: false,
       errorMessage: "",
@@ -74,18 +75,24 @@ export default {
     async handleLogin() {
       this.isLoading = true; // Activa el spinner
       try {
-        const response = await axios.post(
-          "http://formato15.ebsa.com.co:8086/api/auth/login",
-          this.credentials
-        );
-
+        console.log("Enviando credenciales:", this.credentials); // Imprime el objeto enviado
+        //const response = await axios.post("http://formato15.ebsa.com.co:8086/api/auth/login", this.credentials);
+        const response = await axios.post("http://localhost:8086/api/auth/login", this.credentials, {
+          headers: {
+            "Content-Type": "application/json",
+          },
+          withCredentials: true, // Asegúrate de habilitar esta opción si el servidor requiere credenciales
+        });
+        
         if (response.data.success) {
+          console.log("Respuesta del backend:", response.data); // Imprime la respuesta del backend
           localStorage.setItem("authToken", response.data.token);
           this.$router.push({ name: "Formato15" });
         } else {
           this.errorMessage = response.data.message || "Credenciales incorrectas.";
         }
       } catch (error) {
+        console.error("Error en la solicitud:", error); // Imprime el error
         if (error.response && error.response.data && error.response.data.message) {
           this.errorMessage = error.response.data.message;
         } else {
