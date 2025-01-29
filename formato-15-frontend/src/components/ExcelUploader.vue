@@ -159,8 +159,8 @@ export default {
       }
       this.isLoading = true;
       try {
-        const response = await axios.get("http://formato15.ebsa.com.co:8086/api/excel/findFullInformation", {
-        //const response = await axios.get("http://localhost:8086/api/excel/findFullInformation", {
+        //const response = await axios.get("http://formato15.ebsa.com.co:8086/api/excel/findFullInformation", {
+        const response = await axios.get("http://localhost:8086/api/excel/findFullInformation", {
           params: {
             ano: this.ano,
             mes: this.mes,
@@ -193,8 +193,8 @@ export default {
         const year = this.selectedYear;
         const month = this.selectedMonth;
 
-        const response = await axios.get("http://formato15.ebsa.com.co:8086/api/excel/loadFromFile", {
-        //const response = await axios.get("http://localhost:8086/api/excel/loadFromFile", {
+        //const response = await axios.get("http://formato15.ebsa.com.co:8086/api/excel/loadFromFile", {
+        const response = await axios.get("http://localhost:8086/api/excel/loadFromFile", {
           params: { year, month },
         });
 
@@ -213,8 +213,8 @@ export default {
     async validateFile() {
       this.isLoading = true;
       try {
-        const response = await axios.post('http://formato15.ebsa.com.co:8086/api/excel/validateAndSaveFile', this.fileData);
-        //const response = await axios.post('http://localhost:8086/api/excel/validateAndSaveFile', this.fileData);
+        //const response = await axios.post('http://formato15.ebsa.com.co:8086/api/excel/validateAndSaveFile', this.fileData);
+        const response = await axios.post('http://localhost:8086/api/excel/validateAndSaveFile', this.fileData);
         this.fileData = response.data;
         
         this.modalMessage = 'El archivo es válido y cumple con todas las verificaciones.';
