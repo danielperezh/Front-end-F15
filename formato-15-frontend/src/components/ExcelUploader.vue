@@ -13,6 +13,7 @@
         </ul>
       </div>
     </div>
+    <img alt="Vue logo" src="../assets/Ebsa.png" class="logo" />
   </header>
 
   <!-- Contenido principal -->
@@ -20,26 +21,28 @@
     <div class="spinner"></div>
   </div>
 
-  <img alt="Vue logo" src="../assets/EBSA_logo.png" class="logo" />
-
   <div class="excel-uploader">
     <h1 class="styled-header">Formato 15</h1>
 
     <!-- Fase 1: Campos de Año y Mes -->
     <div v-if="fase === 1" class="form-container">
       <label for="ano">Año:</label>
-      <input type="number" id="ano" v-model="ano" placeholder="Ingrese el año" />
+      <input type="number" id="ano" v-model="ano" placeholder="Ingrese el año" min="1"
+        @input="validatePositiveNumber('ano')" class="input-fixed" />
       <label for="mes">Mes:</label>
-      <input type="number" id="mes" v-model="mes" placeholder="Ingrese el mes" />
+      <input type="number" id="mes" v-model="mes" placeholder="Ingrese el mes" min="1" max="12" @input="validateMonth"
+        @blur="fixMonth" class="input-fixed" />
       <button class="boton" @click="fetchData">Buscar datos en Siec</button>
     </div>
 
-    <!-- Fase 2: Botón de Cargar archivo -->
+    <!-- Fase 2: Campos de Año y Mes -->
     <div v-if="fase === 2" class="form-container">
       <label for="year">Año:</label>
-      <input type="text" id="year" v-model="selectedYear" placeholder="Ej: 2024" />
+      <input type="number" id="year" v-model="selectedYear" placeholder="Ingrese el año" min="1"
+        @input="validatePositiveNumber('selectedYear')" class="input-fixed" />
       <label for="month">Mes:</label>
-      <input type="text" id="month" v-model="selectedMonth" placeholder="Ej: 11" />
+      <input type="number" id="month" v-model="selectedMonth" placeholder="Ingrese el mes" min="1" max="12"
+        @input="validateMonth" @blur="fixMonth" class="input-fixed" />
       <button class="boton" @click="loadFile">Buscar archivo generado por ADMS</button>
     </div>
 
@@ -53,22 +56,35 @@
       <button v-if="isValid && fileData.length > 0" @click="downloadCSV">Descargar Datos en CSV</button>
     </div>
 
+    <!-- Input de Filtro (filtra por el número de fila, es decir, la columna “#”) -->
+    <div class="left-align-container">
+      <label>Buscar por número de fila: </label>
+      <input v-model="filterText" placeholder="Filtrar por..." class="filter-input" />
+    </div>
+
+
+
     <!-- Tabla para visualizar y editar datos -->
-    <div v-if="fileData.length" class="table-container">
+    <div v-if="paginatedData.length" class="table-container">
       <h3>Vista Previa del Archivo</h3>
       <div class="table-responsive">
         <table>
           <thead>
             <tr>
-              <th>#</th> 
-              <th v-for="(value, key) in fileData[0]" :key="key">{{ key }}</th>
+              <!-- Columna de número de fila -->
+              <th>#</th>
+              <!-- Encabezados (excluyendo "rowNumber") -->
+              <th v-for="header in tableHeaders" :key="header">{{ header }}</th>
             </tr>
           </thead>
           <tbody>
-            <tr v-for="(row, rowIndex) in fileData" :key="rowIndex">
-              <td>{{ rowIndex + 1 }}</td> 
-              <td v-for="(value, key) in row" :key="key">
-                <input class="data" v-model="fileData[rowIndex][key]" />
+            <tr v-for="(row, rowIndex) in paginatedData" :key="rowIndex">
+              <!-- Se muestra el número de fila (almacenado en fileData) -->
+              <td>{{ row.rowNumber }}</td>
+              <!-- Iteramos sobre las claves del registro (excluyendo "rowNumber") -->
+              <td v-for="key in filteredRowKeys(row)" :key="key">
+                <!-- <input class="data" v-model="row[key]" /> -->
+                {{ row[key] }}
               </td>
             </tr>
           </tbody>
@@ -76,41 +92,66 @@
       </div>
     </div>
 
+    <!-- Controles de Paginación Mejorados -->
+    <nav aria-label="Page navigation" class="pagination-container" v-if="totalPages > 1">
+      <ul class="pagination justify-content-center">
+        <li class="page-item" :class="{ disabled: currentPage === 1 }">
+          <a class="page-link" href="#" @click.prevent="goToPage(1)">«</a>
+        </li>
+        <li class="page-item" :class="{ disabled: currentPage === 1 }">
+          <a class="page-link" href="#" @click.prevent="previousPage">‹</a>
+        </li>
+        <li class="page-item" v-for="page in visiblePages" :key="page" :class="{ active: page === currentPage }">
+          <a class="page-link" href="#" @click.prevent="goToPage(page)">{{ page }}</a>
+        </li>
+        <li class="page-item" :class="{ disabled: currentPage === totalPages }">
+          <a class="page-link" href="#" @click.prevent="nextPage">›</a>
+        </li>
+        <li class="page-item" :class="{ disabled: currentPage === totalPages }">
+          <a class="page-link" href="#" @click.prevent="goToPage(totalPages)">»</a>
+        </li>
+      </ul>
+    </nav>
 
-    <!-- Modal de alerta -->
-    <!-- <div v-if="showModal" class="modal">
-      <div class="modal-content">
-        <h2>Mensaje!</h2>
-        <p>{{ modalMessage }}</p>
-        <button @click="closeModal">Cerrar</button>
-      </div>
-    </div> -->
-
+    <!-- Modal (se muestra cuando showModal es true) -->
     <div v-if="showModal" class="modal">
       <div class="modal-content">
         <h2>Mensaje!</h2>
-        <!-- Usa v-html para renderizar el contenido con HTML -->
+        <!-- Se muestran todos los mensajes (ya sea de error o de éxito) -->
         <p v-html="modalMessage"></p>
+        <!-- Botón de descarga: se muestra solo si downloadLink tiene un valor -->
+        <div v-if="downloadError" style="margin: 15px 0;">
+          <a :href="downloadError" download="errores.txt" class="boton">
+            Descargar errores
+          </a>
+        </div>
         <button @click="closeModal">Cerrar</button>
       </div>
     </div>
 
-
-    
   </div>
+
+  <!-- Footer -->
+  <footer class="border-top footer text-muted">
+    <div class="container text-center">
+      dperez&copy; 2024 | Formato 15 | Empresa de Energía de Boyacá S.A E.S.P | Boyacá, Colombia
+    </div>
+  </footer>
 </template>
 
 <script>
 import axios from 'axios';
+axios.defaults.withCredentials = true;
 
 export default {
-  
   data() {
     return {
-      file: null,
       fileData: [],
+      errorCells: {},
       isLoading: false,
       downloadLink: null,
+      downloadError: null,
+      filterText: "",
       showModal: false,
       isValid: false,
       modalMessage: '',
@@ -118,38 +159,118 @@ export default {
       ano: null,
       mes: null,
       userName: '',
-      selectedYear: '',   // Año ingresado por el usuario
-      selectedMonth: '',  // Mes ingresado por el usuari
-      fase: 1, // Control de las fases
+      selectedYear: '',
+      selectedMonth: '',
+      fase: 1,
+      currentPage: 1,
+      pageSize: 10,
+      pageRange: 5,
       isDropdownOpen: false,
     };
   },
+
+  computed: {
+    // Encabezados de la tabla (excluyendo "rowNumber")
+    tableHeaders() {
+      if (this.fileData.length > 0) {
+        return Object.keys(this.fileData[0]).filter(key => key !== 'rowNumber');
+      }
+      return [];
+    },
+    // Filtra la data basándose en el valor de "rowNumber"
+    filteredData() {
+      if (!this.filterText) return this.fileData;
+      return this.fileData.filter(row =>
+        String(row.rowNumber).toLowerCase().includes(this.filterText.toLowerCase())
+      );
+    },
+    totalPages() {
+      return Math.ceil(this.filteredData.length / this.pageSize);
+    },
+    paginatedData() {
+      const start = (this.currentPage - 1) * this.pageSize;
+      return this.filteredData.slice(start, start + this.pageSize);
+    },
+    visiblePages() {
+      const halfRange = Math.floor(this.pageRange / 2);
+      let start = Math.max(1, this.currentPage - halfRange);
+      let end = Math.min(this.totalPages, start + this.pageRange - 1);
+      if (end - start < this.pageRange - 1) {
+        start = Math.max(1, end - this.pageRange + 1);
+      }
+      return Array.from({ length: end - start + 1 }, (_, i) => start + i);
+    },
+  },
+
   created() {
-    // Extraer el nombre del usuario del token al cargar el componente
+    // Extraer el nombre del usuario desde el token
     this.getUserName();
   },
+
   methods: {
+    // Devuelve las claves del registro excluyendo "rowNumber"
+    filteredRowKeys(row) {
+      return Object.keys(row).filter(key => key !== 'rowNumber');
+    },
+    goToPage(page) {
+      if (page >= 1 && page <= this.totalPages) {
+        this.currentPage = page;
+      }
+    },
+    nextPage() {
+      if (this.currentPage < this.totalPages) {
+        this.currentPage++;
+      }
+    },
+    previousPage() {
+      if (this.currentPage > 1) {
+        this.currentPage--;
+      }
+    },
+    validatePositiveNumber(field) {
+      if (this[field] < 1 || isNaN(this[field])) {
+        this[field] = "";
+      }
+    },
+    validateMonth() {
+      if (this.mes < 1) {
+        this.mes = "";
+      } else if (this.mes > 12) {
+        this.mes = 12;
+      }
+      if (this.selectedMonth < 1) {
+        this.selectedMonth = "";
+      } else if (this.selectedMonth > 12) {
+        this.selectedMonth = 12;
+      }
+    },
+    fixMonth() {
+      if (this.mes < 1) this.mes = 1;
+      if (this.mes > 12) this.mes = 12;
+      if (this.selectedMonth < 1) this.selectedMonth = 1;
+      if (this.selectedMonth > 12) this.selectedMonth = 12;
+    },
     getUserName() {
       const token = localStorage.getItem('authToken');
       if (token) {
         try {
-          const payloadBase64 = token.split('.')[1]; // Extraer la parte del payload
-          const payload = JSON.parse(atob(payloadBase64)); // Decodificar y parsear JSON
-          this.userName = payload.nombre || 'Usuario'; // Extraer el campo 'nombre'
+          const payloadBase64 = token.split('.')[1];
+          const payload = JSON.parse(atob(payloadBase64));
+          this.userName = payload.nombre || 'Usuario';
         } catch (error) {
           console.error('Error al leer el token:', error.message);
-          this.userName = 'Usuario'; // Fallback en caso de error
+          this.userName = 'Usuario';
         }
       } else {
-        this.userName = 'Usuario'; // Si no hay token
+        this.userName = 'Usuario';
       }
     },
     toggleDropdown() {
-      this.isDropdownOpen = !this.isDropdownOpen; // Alternar estado
+      this.isDropdownOpen = !this.isDropdownOpen;
     },
     logout() {
-      localStorage.removeItem('authToken'); // Eliminar el token
-      this.$router.push({ name: 'Login' }); // Redirigir al login
+      localStorage.removeItem('authToken');
+      this.$router.push({ name: 'Login' });
     },
     async fetchData() {
       if (!this.ano || !this.mes) {
@@ -159,99 +280,92 @@ export default {
       }
       this.isLoading = true;
       try {
-        //const response = await axios.get("http://formato15.ebsa.com.co:8086/api/excel/findFullInformation", {
         const response = await axios.get("http://localhost:8086/api/excel/findFullInformation", {
-          params: {
-            ano: this.ano,
-            mes: this.mes,
-          },
+          params: { ano: this.ano, mes: this.mes },
         });
-
         if (response.data && response.data.length > 0) {
-          this.fileData = [...this.fileData, ...response.data];
-          this.isValid = true; // Activa el botón de descarga y envío
+          // Calculamos el offset para asignar el número de fila (rowNumber) de forma consecutiva
+          const offset = this.fileData.length;
+          const newData = response.data.map((row, index) => ({
+            ...row,
+            rowNumber: offset + index + 1
+          }));
+          this.fileData = [...this.fileData, ...newData];
+          this.isValid = true;
           this.modalMessage = "Datos cargados correctamente.";
           this.showModal = true;
-
           // Cambiar a fase 2 (Cargar archivo)
           this.fase = 2;
+          this.currentPage = 1;
         } else {
           this.modalMessage = "No se encontraron datos para el año y mes ingresados.";
-          // this.showModal = true;
         }
       } catch (error) {
         this.handleError(error, "Error al buscar los datos.");
       } finally {
-        this.isLoading = false; // Desactiva el spinner
+        this.isLoading = false;
         this.showModal = true;
       }
     },
-
     async loadFile() {
-      this.isLoading = true; // Activa el spinner
+      this.isLoading = true;
       try {
         const year = this.selectedYear;
         const month = this.selectedMonth;
-
-        //const response = await axios.get("http://formato15.ebsa.com.co:8086/api/excel/loadFromFile", {
         const response = await axios.get("http://localhost:8086/api/excel/loadFromFile", {
           params: { year, month },
         });
-
-        this.fileData = [...this.fileData, ...response.data];
+        // Asignar el rowNumber de forma consecutiva según la data ya cargada
+        const offset = this.fileData.length;
+        const newData = response.data.map((row, index) => ({
+          ...row,
+          rowNumber: offset + index + 1
+        }));
+        this.fileData = [...this.fileData, ...newData];
         this.fase = 3;
+        this.currentPage = 1;
       } catch (error) {
         this.modalMessage = "Error al cargar datos desde el archivo.";
         this.showModal = true;
       } finally {
-        this.isLoading = false; // Desactiva el spinner
+        this.isLoading = false;
       }
     },
-
-
-
     async validateFile() {
       this.isLoading = true;
+      this.errorCells = {};
       try {
-        //const response = await axios.post('http://formato15.ebsa.com.co:8086/api/excel/validateAndSaveFile', this.fileData);
-        const response = await axios.post('http://localhost:8086/api/excel/validateAndSaveFile', this.fileData);
+        const response = await axios.post('http://localhost:8086/api/validateAndSaveFile', this.fileData, {
+          headers: { "Content-Type": "application/json" }
+        });
         this.fileData = response.data;
-        
         this.modalMessage = 'El archivo es válido y cumple con todas las verificaciones.';
-        // this.showModal = true;
-
         const url = window.URL.createObjectURL(new Blob([response.data]));
         this.downloadLink = url;
-
+        this.downloadError = null;
         this.showSendButton = true;
-
-        // Cambiar a fase 4 (Descargar CSV)
         this.fase = 4;
       } catch (error) {
         this.handleError(error, 'El archivo no cumple con las validaciones.');
         this.showSendButton = false;
       } finally {
-        this.isLoading = false; // Desactiva el spinner
+        this.isLoading = false;
         this.showModal = true;
       }
     },
-
     downloadCSV() {
       if (!this.fileData || this.fileData.length === 0) {
         this.modalMessage = "No hay datos disponibles para descargar.";
         this.showModal = true;
         return;
       }
-
       const header = Object.keys(this.fileData[0]).join(",");
       const rows = this.fileData
         .map(row => Object.values(row).map(value => `"${value}"`).join(","))
         .join("\n");
-
       const csvContent = `${header}\n${rows}`;
       const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
       const url = URL.createObjectURL(blob);
-
       const link = document.createElement("a");
       link.href = url;
       link.setAttribute("download", "Formato15.csv");
@@ -259,26 +373,67 @@ export default {
       link.click();
       document.body.removeChild(link);
     },
-
     handleError(error, defaultMessage) {
+      let message = defaultMessage;
       if (error.response && error.response.data) {
-        this.modalMessage = error.response.data || defaultMessage;
+        message = error.response.data;
+        // Aquí se asume que el mensaje contiene los errores separados por <br>
+        // Si no, deberás adaptarlo según el formato recibido.
+        if (message && message.indexOf("<br>") !== -1) {
+          const errorLines = message.split("<br>");
+          // Se mantiene el formato HTML para el modal:
+          this.modalMessage = errorLines.join("<br>");
+          // Se crea un arreglo de líneas sin etiquetas HTML para la descarga:
+          const plainErrorLines = errorLines.map(line => line.replace(/<[^>]*>/g, ""));
+          const blob = new Blob([plainErrorLines.join("\n")], { type: "text/plain;charset=utf-8" });
+          this.downloadError = URL.createObjectURL(blob);
+        } else {
+          this.modalMessage = message;
+        }
+
       } else {
-        this.modalMessage = defaultMessage;
+        this.modalMessage = message;
       }
       this.showModal = true;
     },
-
     closeModal() {
       this.showModal = false;
+    }
+  },
+  watch: {
+    filterText() {
+      // Reinicia la paginación al cambiar el filtro
+      this.currentPage = 1;
     }
   }
 };
 </script>
 
-
 <style scoped>
-/* Estilos generales */
+.left-align-container {
+  align-self: flex-start;
+  /* Esto alinea el contenedor a la izquierda */
+  text-align: left;
+  margin: 10px 0;
+}
+
+
+.filter-input {
+  margin-bottom: 10px;
+  padding: 8px;
+  width: 30%;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  text-align: center;
+}
+
+
+.input-fixed {
+  width: 150px;
+  padding: 10px;
+  text-align: center;
+}
+
 .excel-uploader {
   text-align: center;
   margin-top: 10px;
@@ -288,18 +443,15 @@ export default {
   padding: 0 10px;
 }
 
-label, h3{
+label,
+h3 {
   color: black;
-  margin-right: 10px;
-  margin-left: 10px;
-  margin-bottom: 5px;
-  margin-top: 50px;
-  font-family: 'Times New Roman', serif; 
+  margin: 0 10px 15px 10px;
+  font-family: 'Times New Roman', serif;
 }
 
-.logo{
-  margin-top: 40px;
-  max-width: 13%;
+.logo {
+  max-width: 5%;
 }
 
 .styled-header {
@@ -311,7 +463,8 @@ label, h3{
   margin-bottom: 20px;
 }
 
-button, a {
+button,
+a {
   margin-top: 10px;
   padding: 10px 20px;
   background-color: #ffc629;
@@ -334,19 +487,16 @@ button:disabled {
 
 body {
   margin: 0;
-  /* font-family: Arial, sans-serif; */
 }
 
-/* Estilo al enfocar el campo */
 input:focus {
-  border-color: #030303; /* Azul brillante */
-  box-shadow: 0 0 5px rgba(0, 123, 255, 0.5); /* Resaltado suave */
-  outline: none; /* Eliminar el contorno predeterminado */
+  border-color: #030303;
+  box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+  outline: none;
 }
 
-/* Cambiar el color del borde al pasar el mouse */
 input:hover {
-  border-color: #0056b3; /* Azul más oscuro */
+  border-color: #0056b3;
 }
 
 .modal {
@@ -359,6 +509,7 @@ input:hover {
   width: 100%;
   height: 100%;
   background-color: rgba(0, 0, 0, 0.5);
+  z-index: 4;
 }
 
 .modal-content {
@@ -367,6 +518,8 @@ input:hover {
   border-radius: 5px;
   width: auto;
   text-align: center;
+  max-height: 500px;
+  overflow-y: auto;
 }
 
 .modal-content button {
@@ -401,8 +554,13 @@ input:hover {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .app-header {
@@ -416,10 +574,8 @@ input:hover {
 
 .user-info {
   position: relative;
-  display: flex; /* Asegura que el contenido del dropdown esté alineado correctamente */
-  justify-content: flex-start; /* Mueve el botón hacia la izquierda */
+  display: flex;
   align-items: center;
-  margin-left: 0; /* Asegura que no tenga margen izquierdo innecesario */
 }
 
 .dropdown-toggle {
@@ -463,13 +619,6 @@ input:hover {
   background-color: #e9ae0d;
 }
 
-
-.excel-uploader {
-  text-align: center;
-  margin-top: 20px;
-  padding: 0 15px;
-}
-
 .styled-header {
   font-size: 36px;
   color: white;
@@ -481,7 +630,6 @@ input:hover {
 button {
   margin-top: 10px;
   padding: 10px;
-  /* background-color: #ffc629; */
   background-color: #FFD971;
   color: black;
   border: none;
@@ -496,13 +644,15 @@ button:disabled {
 
 .table-container {
   width: 100%;
-  max-width: 1200px;
-  margin: 0 auto;
+  margin: 0 15px;
+  position: relative;
+  z-index: 1;
 }
 
 .table-responsive {
+  max-height: 650px;
+  overflow-y: auto;
   overflow-x: auto;
-  width: 100%;
 }
 
 table {
@@ -512,25 +662,22 @@ table {
   background-color: #f8f6ee;
 }
 
-th, td {
-  /* border: 1px solid #ddd; */
+th,
+td {
   border: 0.5px solid #F1F5FA;
   padding: 8px;
   text-align: center;
-  font-family: 'Times New Roman', serif; 
+  font-family: 'Times New Roman', serif;
 }
 
 input {
-  width: 100%;
   box-sizing: border-box;
   padding: 10px;
   border: 1px solid #ccc;
   border-radius: 5px;
   font-size: 14px;
-  width: auto;
 }
 
-/* Responsividad */
 @media (max-width: 768px) {
   .styled-header {
     font-size: 24px;
@@ -541,7 +688,8 @@ input {
     font-size: 14px;
   }
 
-  th, td {
+  th,
+  td {
     padding: 6px;
   }
 }
@@ -555,8 +703,82 @@ input {
     font-size: 12px;
   }
 
-  th, td {
+  th,
+  td {
     font-size: 12px;
   }
+}
+
+.pagination-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 20px 0 50px;
+  position: relative;
+  z-index: 0;
+}
+
+.pagination {
+  display: flex;
+  list-style: none;
+  padding: 0;
+}
+
+.page-item {
+  margin: 0 1px;
+}
+
+.page-link {
+  padding: 8px 12px;
+  text-decoration: none;
+  background-color: #ffc107;
+  color: black;
+  border-radius: 5px;
+  transition: background-color 0.3s;
+}
+
+.page-link:hover {
+  background-color: #3a3a3a;
+  color: #fff;
+}
+
+.page-item.disabled .page-link {
+  background-color: #d6d6d6;
+  color: #a0a0a0;
+  pointer-events: none;
+}
+
+.page-item.active .page-link {
+  background-color: #3a3a3a;
+  color: white;
+  font-weight: bold;
+}
+
+.footer {
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  background-color: #d2d4d6;
+  padding: 10px 0;
+  text-align: center;
+  border-top: 1px solid #b6b4b4;
+}
+
+.footer-container {
+  max-width: 1200px;
+  margin: auto;
+  font-size: 14px;
+  color: #555;
+}
+
+.boton {
+  margin-top: 10px;
+  padding: 10px 20px;
+  background-color: #ffc629;
+  color: black;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  text-decoration: none;
 }
 </style>
